@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal, IconButton, Button, Tooltip, Paper } from '@mui/material';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import SchoolIcon from '@mui/icons-material/School';
@@ -421,6 +421,17 @@ The length field in nested documents is crucial because:
     }
   };
 
+  // Add a window resize listener
+  useEffect(() => {
+    const handleResize = () => {
+      // Force a re-render when window size changes
+      setWalkthrough(prev => ({...prev}));
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
     <div className="flex flex-col w-full" style={{ backgroundColor: mongoColors.darkGreen, color: mongoColors.textLight }}>
       <div style={{ 
@@ -468,14 +479,15 @@ The length field in nested documents is crucial because:
         <div className="w-full md:w-2/5">
           <Tooltip
             open={walkthrough.active && walkthrough.step === 0}
-            placement={walkthroughSteps[0].placement}
+            placement={window.innerWidth < 768 ? 'bottom' : 'right'}
             arrow
             PopperProps={{
               disablePortal: true,
               sx: {
                 "& .MuiTooltip-tooltip": {
                   backgroundColor: "transparent",
-                  padding: 0
+                  padding: 0,
+                  maxWidth: window.innerWidth < 768 ? '90vw' : '300px'
                 },
                 "& .MuiTooltip-arrow": {
                   color: mongoColors.white
@@ -491,7 +503,7 @@ The length field in nested documents is crucial because:
               padding: '1rem', 
               borderRadius: '0.375rem', 
               marginBottom: '1rem', 
-              maxHeight: '24rem', 
+              maxHeight: window.innerWidth < 768 ? '16rem' : '24rem', 
               overflow: 'auto' 
             }}>
               <div className="mb-2" style={{ color: mongoColors.textMedium }}>// MongoDB JSON Document</div>
@@ -544,14 +556,15 @@ The length field in nested documents is crucial because:
           
           <Tooltip
             open={walkthrough.active && walkthrough.step === 1}
-            placement={walkthroughSteps[1].placement}
+            placement={window.innerWidth < 768 ? 'bottom' : 'right'}
             arrow
             PopperProps={{
               disablePortal: true,
               sx: {
                 "& .MuiTooltip-tooltip": {
                   backgroundColor: "transparent",
-                  padding: 0
+                  padding: 0,
+                  maxWidth: window.innerWidth < 768 ? '90vw' : '300px'
                 },
                 "& .MuiTooltip-arrow": {
                   color: mongoColors.white
@@ -562,7 +575,7 @@ The length field in nested documents is crucial because:
           >
             <div id="search-buttons" style={{ 
               backgroundColor: mongoColors.white, 
-              padding: '1.5rem', 
+              padding: window.innerWidth < 768 ? '1rem' : '1.5rem', 
               borderRadius: '0.375rem', 
               marginBottom: '1rem',
               boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
@@ -570,7 +583,7 @@ The length field in nested documents is crucial because:
               <h2 className="text-lg font-semibold mb-3" style={{ color: mongoColors.darkGreen }}>Select a Field to Search</h2>
               <p className="text-sm mb-4" style={{ color: mongoColors.textMedium }}>Watch how MongoDB traverses the BSON structure</p>
               
-              <div className="grid grid-cols-2 gap-2 mb-4">
+              <div className={`grid ${window.innerWidth < 768 ? 'grid-cols-1' : 'grid-cols-2'} gap-2 mb-4`}>
                 {Object.keys(searchPaths).map(field => (
                   <button 
                     key={field}
@@ -582,7 +595,12 @@ The length field in nested documents is crucial because:
                       backgroundColor: searchField === field ? mongoColors.green : mongoColors.mint,
                       color: searchField === field ? mongoColors.darkGreen : mongoColors.blueGreen,
                       fontWeight: 500,
-                      transition: 'all 0.2s ease-in-out'
+                      transition: 'all 0.2s ease-in-out',
+                      width: '100%',
+                      textAlign: 'left',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
                     }}
                   >
                     {field}
@@ -592,14 +610,15 @@ The length field in nested documents is crucial because:
 
               <Tooltip
                 open={walkthrough.active && walkthrough.step === 2}
-                placement={walkthroughSteps[2].placement}
+                placement={window.innerWidth < 768 ? 'bottom' : 'top'}
                 arrow
                 PopperProps={{
                   disablePortal: true,
                   sx: {
                     "& .MuiTooltip-tooltip": {
                       backgroundColor: "transparent",
-                      padding: 0
+                      padding: 0,
+                      maxWidth: window.innerWidth < 768 ? '90vw' : '300px'
                     },
                     "& .MuiTooltip-arrow": {
                       color: mongoColors.white
@@ -617,7 +636,8 @@ The length field in nested documents is crucial because:
                       color: mongoColors.darkGreen,
                       fontWeight: 600,
                       borderRadius: '0.25rem',
-                      transition: 'all 0.2s ease-in-out'
+                      transition: 'all 0.2s ease-in-out',
+                      width: window.innerWidth < 768 ? '100%' : 'auto'
                     }}
                   >
                     Next Step →
@@ -633,7 +653,7 @@ The length field in nested documents is crucial because:
             backgroundColor: mongoColors.white, 
             border: `1px solid ${mongoColors.mint}`,
             borderRadius: '0.375rem', 
-            padding: '1rem', 
+            padding: window.innerWidth < 768 ? '0.75rem' : '1rem', 
             marginBottom: '1rem' 
           }}>
             <div className="flex justify-between items-center mb-3">
@@ -659,14 +679,15 @@ The length field in nested documents is crucial because:
           {showSizeStats && (
             <Tooltip
               open={walkthrough.active && walkthrough.step === 3}
-              placement={walkthroughSteps[3].placement}
+              placement={window.innerWidth < 768 ? 'bottom' : 'left'}
               arrow
               PopperProps={{
                 disablePortal: true,
                 sx: {
                   "& .MuiTooltip-tooltip": {
                     backgroundColor: "transparent",
-                    padding: 0
+                    padding: 0,
+                    maxWidth: window.innerWidth < 768 ? '90vw' : '300px'
                   },
                   "& .MuiTooltip-arrow": {
                     color: mongoColors.white
@@ -731,14 +752,15 @@ The length field in nested documents is crucial because:
           
           <Tooltip
             open={walkthrough.active && walkthrough.step === 4}
-            placement={walkthroughSteps[4].placement}
+            placement={window.innerWidth < 768 ? 'bottom' : 'left'}
             arrow
             PopperProps={{
               disablePortal: true,
               sx: {
                 "& .MuiTooltip-tooltip": {
                   backgroundColor: "transparent",
-                  padding: 0
+                  padding: 0,
+                  maxWidth: window.innerWidth < 768 ? '90vw' : '300px'
                 },
                 "& .MuiTooltip-arrow": {
                   color: mongoColors.white
