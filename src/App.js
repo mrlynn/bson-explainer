@@ -1,6 +1,27 @@
 import React, { useState } from 'react';
 
-const EnhancedBSONDemo = () => {
+// MongoDB Brand Colors
+const mongoColors = {
+  // Primary colors
+  green: "#00ED64", // Spring Green (bright green)
+  darkGreen: "#001E2B", // Slate Blue (very dark green/blue)
+  forestGreen: "#116149", // Forest Green
+  evergreen: "#023430", // Evergreen (dark green)
+  lightGreen: "#C3F4D7", // Light mint/green
+  
+  // Secondary colors
+  lavender: "#F9F6FF", // Very light purple
+  blueGreen: "#00684A", // Blue-green
+  mint: "#E3FCF7", // Very light mint
+  white: "#FFFFFF",
+  
+  // Text colors
+  textDark: "#001E2B", // Dark slate for text
+  textLight: "#FFFFFF", // White text
+  textMedium: "#889397", // Medium gray text
+};
+
+const MongoDBBSONDemo = () => {
   const [searchField, setSearchField] = useState('color');
   const [searchStep, setSearchStep] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -226,9 +247,9 @@ const EnhancedBSONDemo = () => {
   };
 
   return (
-    <div className="flex flex-col w-full bg-gray-50 p-4">
-      <div className="bg-blue-50 p-3 mb-4 rounded-lg">
-        <h1 className="text-2xl font-bold mb-2">MongoDB BSON Document Structure</h1>
+    <div className="flex flex-col w-full" style={{ backgroundColor: mongoColors.lavender, color: mongoColors.textDark }}>
+      <div style={{ backgroundColor: mongoColors.lightGreen, padding: '0.75rem', marginBottom: '1rem', borderRadius: '0.375rem' }}>
+        <h1 className="text-2xl font-bold mb-2" style={{ color: mongoColors.darkGreen }}>MongoDB BSON Document Structure</h1>
         <p>BSON stores each field with its <strong>type</strong>, <strong>name</strong>, <strong>length</strong>, and <strong>value</strong>.</p>
         <p>When MongoDB looks for fields, it starts at the beginning and traverses sequentially.</p>
         <p>The <strong>length</strong> field allows MongoDB to <strong>skip entire nested structures</strong> when not needed!</p>
@@ -236,8 +257,8 @@ const EnhancedBSONDemo = () => {
       
       <div className="flex flex-col md:flex-row gap-4">
         <div className="w-full md:w-2/5">
-          <div className="bg-gray-900 text-green-400 p-3 rounded-lg font-mono text-sm mb-4 max-h-96 overflow-auto">
-            <div className="mb-1 text-gray-400">// MongoDB JSON Document</div>
+          <div style={{ backgroundColor: mongoColors.darkGreen, color: mongoColors.green, padding: '0.75rem', borderRadius: '0.375rem', marginBottom: '1rem', maxHeight: '24rem', overflow: 'auto' }}>
+            <div className="mb-1" style={{ color: mongoColors.textMedium }}>// MongoDB JSON Document</div>
             <pre className="text-xs">
 {`{
   _id: ${document._id},
@@ -284,54 +305,39 @@ const EnhancedBSONDemo = () => {
             </pre>
           </div>
           
-          <div className="bg-white p-4 rounded-lg shadow-sm mb-4">
-            <h2 className="text-lg font-semibold mb-2">Select a Field to Search</h2>
+          <div style={{ backgroundColor: mongoColors.white, padding: '1rem', borderRadius: '0.375rem', marginBottom: '1rem', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)' }}>
+            <h2 className="text-lg font-semibold mb-2" style={{ color: mongoColors.darkGreen }}>Select a Field to Search</h2>
             <p className="text-sm mb-3">Watch how MongoDB traverses the BSON structure</p>
             
             <div className="grid grid-cols-2 gap-2 mb-3">
-              <button 
-                onClick={() => startFieldSearch('color')} 
-                className={`px-3 py-2 text-sm rounded ${searchField === 'color' ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-800'} hover:bg-blue-200`}
-              >
-                color
-              </button>
-              <button 
-                onClick={() => startFieldSearch('shape')} 
-                className={`px-3 py-2 text-sm rounded ${searchField === 'shape' ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-800'} hover:bg-blue-200`}
-              >
-                shape
-              </button>
-              <button 
-                onClick={() => startFieldSearch('metadata.department.manager.name')} 
-                className={`px-3 py-2 text-sm rounded ${searchField === 'metadata.department.manager.name' ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-800'} hover:bg-blue-200`}
-              >
-                metadata.department.manager.name
-              </button>
-              <button 
-                onClick={() => startFieldSearch('inventory.pricing.discount.percent')} 
-                className={`px-3 py-2 text-sm rounded ${searchField === 'inventory.pricing.discount.percent' ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-800'} hover:bg-blue-200`}
-              >
-                inventory.pricing.discount.percent
-              </button>
-              <button 
-                onClick={() => startFieldSearch('props.face')} 
-                className={`px-3 py-2 text-sm rounded ${searchField === 'props.face' ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-800'} hover:bg-blue-200`}
-              >
-                props.face
-              </button>
-              <button 
-                onClick={() => startFieldSearch('coords.1')} 
-                className={`px-3 py-2 text-sm rounded ${searchField === 'coords.1' ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-800'} hover:bg-blue-200`}
-              >
-                coords[1]
-              </button>
+              {Object.keys(searchPaths).map(field => (
+                <button 
+                  key={field}
+                  onClick={() => startFieldSearch(field)} 
+                  style={{ 
+                    padding: '0.5rem 0.75rem',
+                    fontSize: '0.875rem',
+                    borderRadius: '0.25rem',
+                    backgroundColor: searchField === field ? mongoColors.blueGreen : mongoColors.mint,
+                    color: searchField === field ? mongoColors.white : mongoColors.darkGreen
+                  }}
+                >
+                  {field}
+                </button>
+              ))}
             </div>
             
             {/* Manual step navigation */}
             <div className="flex justify-center mt-4">
               <button
                 onClick={nextStep}
-                className="px-4 py-2 bg-green-600 text-white font-medium rounded hover:bg-green-700"
+                style={{ 
+                  padding: '0.5rem 1rem', 
+                  backgroundColor: mongoColors.green,
+                  color: mongoColors.darkGreen,
+                  fontWeight: 500,
+                  borderRadius: '0.25rem'
+                }}
               >
                 Next Step →
               </button>
@@ -339,25 +345,28 @@ const EnhancedBSONDemo = () => {
           </div>
           
           {showSizeStats && (
-            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <h3 className="font-semibold mb-1">Performance Analysis:</h3>
+            <div style={{ padding: '0.75rem', backgroundColor: mongoColors.mint, border: `1px solid ${mongoColors.lightGreen}`, borderRadius: '0.375rem' }}>
+              <h3 className="font-semibold mb-1" style={{ color: mongoColors.darkGreen }}>Performance Analysis:</h3>
               <div className="text-sm space-y-2">
                 <div className="flex justify-between items-center">
                   <span>Bytes examined:</span>
-                  <span className="font-mono">{getByteStats().examined} bytes</span>
+                  <span style={{ fontFamily: 'monospace' }}>{getByteStats().examined} bytes</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span>Bytes skipped:</span>
-                  <span className="font-mono text-green-600 font-bold">{getByteStats().skipped} bytes</span>
+                  <span style={{ fontFamily: 'monospace', color: mongoColors.green, fontWeight: 'bold' }}>{getByteStats().skipped} bytes</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span>Total document size:</span>
-                  <span className="font-mono">{getByteStats().total} bytes</span>
+                  <span style={{ fontFamily: 'monospace' }}>{getByteStats().total} bytes</span>
                 </div>
-                <div className="mt-2 bg-gray-200 h-4 rounded-full overflow-hidden">
+                <div style={{ marginTop: '0.5rem', backgroundColor: mongoColors.lightGreen, height: '1rem', borderRadius: '9999px', overflow: 'hidden' }}>
                   <div 
-                    className="bg-green-500 h-full" 
-                    style={{ width: `${getByteStats().percentSkipped}%` }}
+                    style={{ 
+                      backgroundColor: mongoColors.green, 
+                      height: '100%',
+                      width: `${getByteStats().percentSkipped}%` 
+                    }}
                   ></div>
                 </div>
                 <div className="text-center text-xs">
@@ -369,23 +378,23 @@ const EnhancedBSONDemo = () => {
         </div>
         
         <div className="w-full md:w-3/5">
-          <div className="bg-white border border-gray-200 rounded-lg p-3 mb-3">
+          <div style={{ backgroundColor: mongoColors.white, border: `1px solid ${mongoColors.lightGreen}`, borderRadius: '0.375rem', padding: '0.75rem', marginBottom: '0.75rem' }}>
             <div className="flex justify-between items-center mb-2">
-              <div className="font-semibold">Searching for: <span className="text-blue-600">{searchField}</span></div>
-              <div className="text-sm text-gray-500">{searchStep > 0 ? `Step ${Math.round(searchStep)}` : 'Ready'}</div>
+              <div className="font-semibold">Searching for: <span style={{ color: mongoColors.blueGreen }}>{searchField}</span></div>
+              <div className="text-sm" style={{ color: mongoColors.textMedium }}>{searchStep > 0 ? `Step ${Math.round(searchStep)}` : 'Ready'}</div>
             </div>
-            <div className="p-2 bg-blue-50 rounded text-sm min-h-8">
+            <div style={{ padding: '0.5rem', backgroundColor: mongoColors.lightGreen, borderRadius: '0.25rem', fontSize: '0.875rem', minHeight: '2rem' }}>
               {getStepMessage()}
             </div>
           </div>
           
-          <div className="overflow-hidden rounded-lg border border-gray-200">
-            <table className="min-w-full bg-white">
+          <div style={{ overflow: 'hidden', borderRadius: '0.375rem', border: `1px solid ${mongoColors.lightGreen}` }}>
+            <table className="min-w-full" style={{ backgroundColor: mongoColors.white }}>
               <thead>
-                <tr className="bg-gray-800 text-white text-sm">
+                <tr style={{ backgroundColor: mongoColors.darkGreen, color: mongoColors.white, fontSize: '0.875rem' }}>
                   <th className="py-2 px-3 text-left">Type</th>
                   <th className="py-2 px-3 text-left">Name</th>
-                  <th className="py-2 px-3 text-left bg-yellow-600">Length</th>
+                  <th className="py-2 px-3 text-left" style={{ backgroundColor: mongoColors.blueGreen }}>Length</th>
                   <th className="py-2 px-3 text-left">Value</th>
                 </tr>
               </thead>
@@ -403,22 +412,31 @@ const EnhancedBSONDemo = () => {
                                        !searchField.startsWith(field.name);
                   
                   return (
-                    <tr key={index} className={`border-b border-gray-100 text-sm
-                      ${isActive ? 'bg-blue-100' : isHighlighted ? 'bg-blue-50' : ''}
-                      ${willBeSkipped ? 'line-through opacity-50' : ''}`}
-                    >
+                    <tr key={index} style={{ 
+                      borderBottom: '1px solid #edf2f7',
+                      fontSize: '0.875rem',
+                      backgroundColor: isActive ? mongoColors.lightGreen : isHighlighted ? '#E5FFF2' : mongoColors.white,
+                      textDecoration: willBeSkipped ? 'line-through' : 'none',
+                      opacity: willBeSkipped ? 0.5 : 1
+                    }}>
                       <td className="py-2 px-3">{field.type}</td>
                       <td className="py-2 px-3 font-medium">
                         {field.name}
                         {field.name === searchField.split('.')[0] && searchField.includes('.') && isHighlighted && (
-                          <span className="ml-1 text-xs bg-blue-700 text-white px-1 rounded">looking inside</span>
+                          <span style={{ marginLeft: '0.25rem', fontSize: '0.75rem', backgroundColor: mongoColors.blueGreen, color: mongoColors.white, padding: '0 0.25rem', borderRadius: '0.25rem' }}>
+                            looking inside
+                          </span>
                         )}
                       </td>
-                      <td className={`py-2 px-3 ${field.nested ? 'bg-yellow-100 font-bold' : ''}`}>{field.length}</td>
+                      <td className="py-2 px-3" style={{ backgroundColor: field.nested ? mongoColors.mint : 'transparent', fontWeight: field.nested ? 'bold' : 'normal' }}>
+                        {field.length}
+                      </td>
                       <td className="py-2 px-3 max-w-xs truncate">
                         {field.value}
                         {willBeSkipped && (
-                          <span className="ml-1 text-xs bg-green-700 text-white px-1 rounded">skipped!</span>
+                          <span style={{ marginLeft: '0.25rem', fontSize: '0.75rem', backgroundColor: mongoColors.green, color: mongoColors.darkGreen, padding: '0 0.25rem', borderRadius: '0.25rem' }}>
+                            skipped!
+                          </span>
                         )}
                       </td>
                     </tr>
@@ -428,8 +446,8 @@ const EnhancedBSONDemo = () => {
             </table>
           </div>
           
-          <div className="mt-4 bg-gray-50 p-3 rounded-lg border border-gray-200">
-            <h3 className="font-semibold mb-2">Why This Matters</h3>
+          <div style={{ marginTop: '1rem', backgroundColor: mongoColors.white, padding: '0.75rem', borderRadius: '0.375rem', border: `1px solid ${mongoColors.lightGreen}` }}>
+            <h3 className="font-semibold mb-2" style={{ color: mongoColors.darkGreen }}>Why This Matters</h3>
             <div className="text-sm space-y-2">
               <p><strong>In traditional databases</strong>, deeply nested data often causes performance problems.</p>
               <p><strong>In MongoDB</strong>, the opposite is true - nested documents can improve performance!</p>
@@ -448,4 +466,4 @@ const EnhancedBSONDemo = () => {
   );
 };
 
-export default EnhancedBSONDemo;
+export default MongoDBBSONDemo;
