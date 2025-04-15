@@ -160,6 +160,66 @@ This demo is built with React and uses:
 - CSS-in-JS for MongoDB brand styling
 - Dynamic calculations for performance metrics
 
+## Understanding the Byte Calculations
+
+The demo shows byte calculations for BSON fields that closely mirror MongoDB's actual BSON format. Here's how the bytes are calculated for each field type:
+
+### Basic Field Structure
+Every BSON field consists of:
+- 1 byte for the type ID
+- Field name (null-terminated string)
+- Length information (if applicable)
+- The actual value
+
+### Size Breakdown by Type
+1. **Integer (int32)**
+   - Type ID: 1 byte
+   - Field name + null terminator
+   - Value: 4 bytes
+   Example: `_id` field = 12 bytes total
+
+2. **String**
+   - Type ID: 1 byte
+   - Field name + null terminator
+   - String length: 4 bytes
+   - String value + null terminator
+   Example: `color: "Red"` = 10 bytes total
+
+3. **Nested Document**
+   - Type ID: 1 byte
+   - Field name + null terminator
+   - Document length: 4 bytes
+   - Content bytes
+   Example: `metadata` document = 205 bytes total
+
+4. **Array**
+   - Similar to nested document
+   - Each element has a numeric string key
+   Example: `coords` array = 22 bytes total
+
+### Length Field Importance
+The length field in nested documents is crucial because:
+1. It's stored at the start of the document/array
+2. It tells MongoDB exactly how many bytes to skip
+3. It enables MongoDB to jump past irrelevant nested structures without parsing them
+
+### Example Calculation
+For the nested path `metadata.department.manager.name`:
+1. Start at document beginning (0 bytes)
+2. Read `_id` field (12 bytes)
+3. Read `color` field (10 bytes)
+4. Find `metadata` field, read length (205 bytes)
+5. Inside metadata, traverse to `department` (120 bytes)
+6. Inside department, find `manager` (85 bytes)
+7. Inside manager, find `name` (20 bytes)
+
+The demo's performance metrics show how many bytes were:
+- Examined: Fields that had to be read
+- Skipped: Fields that could be bypassed using length information
+- Total: Complete document size in bytes
+
+This byte-level efficiency is why nested documents in MongoDB can actually improve performance rather than degrade it.
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.

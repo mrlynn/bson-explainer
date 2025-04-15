@@ -329,10 +329,16 @@ const MongoDBBSONDemo = () => {
 
   // Start a search for a specific field
   const startFieldSearch = (field) => {
+    // Reset all state when starting a new search
     setSearchField(field);
     setSearchStep(0);
     setIsAnimating(false);
-    setShowSizeStats(true);
+    
+    // Reset performance analysis by briefly hiding and showing it
+    setShowSizeStats(false);
+    setTimeout(() => {
+      setShowSizeStats(true);
+    }, 100);
   };
   
   // Advance to the next step in the search
