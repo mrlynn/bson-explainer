@@ -494,22 +494,6 @@ const MongoDBBSONDemo = () => {
                   </button>
                 ))}
               </div>
-              
-              {/* Manual step navigation */}
-              <div className="flex justify-center mt-4">
-                <button
-                  onClick={nextStep}
-                  style={{ 
-                    padding: '0.5rem 1rem', 
-                    backgroundColor: mongoColors.green,
-                    color: mongoColors.darkGreen,
-                    fontWeight: 500,
-                    borderRadius: '0.25rem'
-                  }}
-                >
-                  Next Step →
-                </button>
-              </div>
             </div>
           </Tooltip>
           
