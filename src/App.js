@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import { Modal, IconButton, Button, Tooltip, Paper } from '@mui/material';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import SchoolIcon from '@mui/icons-material/School';
 
 // MongoDB Brand Colors
 const mongoColors = {
@@ -26,6 +29,11 @@ const MongoDBBSONDemo = () => {
   const [searchStep, setSearchStep] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [showSizeStats, setShowSizeStats] = useState(false);
+  const [openHelpModal, setOpenHelpModal] = useState(false);
+  const [walkthrough, setWalkthrough] = useState({
+    active: false,
+    step: 0
+  });
 
   // More complex document structure with deeper nesting
   const document = {
@@ -141,9 +149,116 @@ const MongoDBBSONDemo = () => {
     'coords.1': [0, 1, 2, 3, 4, 5, 6, 7]
   };
 
+  // Walkthrough steps configuration
+  const walkthroughSteps = [
+    {
+      target: 'json-document',
+      title: 'MongoDB Document',
+      content: 'This is a sample MongoDB document. Notice how it contains nested fields and different data types.',
+      placement: 'right'
+    },
+    {
+      target: 'search-buttons',
+      title: 'Field Selection',
+      content: 'Click any of these buttons to search for a specific field. Try both simple fields like "color" and nested fields like "metadata.department.manager.name".',
+      placement: 'right'
+    },
+    {
+      target: 'next-step-button',
+      title: 'Step Through Search',
+      content: 'Click this button to see how MongoDB traverses the document structure, examining or skipping fields based on the length information.',
+      placement: 'top'
+    },
+    {
+      target: 'performance-analysis',
+      title: 'Performance Analysis',
+      content: 'Watch how MongoDB can skip entire nested documents when they are not relevant to your search, making queries more efficient.',
+      placement: 'left'
+    },
+    {
+      target: 'bson-table',
+      title: 'BSON Structure',
+      content: 'This table shows how MongoDB stores your document in BSON format, with type, name, length, and value information for each field.',
+      placement: 'left'
+    }
+  ];
+
+  // Function to start walkthrough
+  const startWalkthrough = () => {
+    setWalkthrough({
+      active: true,
+      step: 0
+    });
+    // Reset demo state
+    setSearchField('color');
+    setSearchStep(0);
+    setShowSizeStats(true);
+  };
+
+  // Function to handle walkthrough navigation
+  const handleWalkthroughStep = (direction) => {
+    if (direction === 'next' && walkthrough.step < walkthroughSteps.length - 1) {
+      setWalkthrough({
+        ...walkthrough,
+        step: walkthrough.step + 1
+      });
+    } else if (direction === 'prev' && walkthrough.step > 0) {
+      setWalkthrough({
+        ...walkthrough,
+        step: walkthrough.step - 1
+      });
+    } else if (direction === 'next') {
+      // End walkthrough
+      setWalkthrough({
+        active: false,
+        step: 0
+      });
+    }
+  };
+
+  // Walkthrough tooltip content
+  const WalkthroughTooltip = ({ step }) => (
+    <Paper sx={{ 
+      p: 2, 
+      maxWidth: 300,
+      backgroundColor: mongoColors.white,
+      border: `1px solid ${mongoColors.lightGreen}`
+    }}>
+      <h3 style={{ color: mongoColors.darkGreen, marginBottom: '0.5rem', fontWeight: 600 }}>
+        {walkthroughSteps[step].title}
+      </h3>
+      <p style={{ marginBottom: '1rem', fontSize: '0.875rem' }}>
+        {walkthroughSteps[step].content}
+      </p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Button 
+          size="small"
+          disabled={step === 0}
+          onClick={() => handleWalkthroughStep('prev')}
+          style={{ 
+            color: step === 0 ? mongoColors.textMedium : mongoColors.blueGreen
+          }}
+        >
+          Previous
+        </Button>
+        <Button
+          size="small"
+          variant="contained"
+          onClick={() => handleWalkthroughStep('next')}
+          style={{ 
+            backgroundColor: mongoColors.green,
+            color: mongoColors.darkGreen
+          }}
+        >
+          {step === walkthroughSteps.length - 1 ? 'Finish' : 'Next'}
+        </Button>
+      </div>
+    </Paper>
+  );
+
   // Calculate bytes "examined" and bytes "skipped" for the current search
   const getByteStats = () => {
-    const targetField = searchField;
+    const targetField = searchField.split('.')[0]; // Get the top-level field we're looking for
     let bytesExamined = 0;
     let bytesSkipped = 0;
     let totalBytes = bsonFields.reduce((sum, field) => sum + field.size, 0);
@@ -154,31 +269,25 @@ const MongoDBBSONDemo = () => {
       
       if (i < Math.floor(searchStep)) {
         // We've already examined this field
-        bytesExamined += field.size;
+        if (field.nested && field.name !== targetField) {
+          // If it's a nested document and not our target, we skipped it
+          bytesSkipped += field.size;
+        } else {
+          // Otherwise we examined it
+          bytesExamined += field.size;
+        }
       } else if (i === Math.floor(searchStep)) {
         // We're currently examining this field
         bytesExamined += field.size;
       } else if (i > Math.floor(searchStep)) {
         // We haven't reached this field yet
-        if (searchField.startsWith(field.name)) {
-          // We'll need to look in this nested document later
-          // (just count it as not yet examined for now)
+        if (field.name === targetField) {
+          // This is our target field, we'll examine it later
+          continue;
         } else {
-          // We'll skip this field entirely due to not matching
+          // We'll skip this field entirely
           bytesSkipped += field.size;
         }
-      }
-    }
-    
-    // Adjust for nested document skipping
-    if (searchField.includes('.')) {
-      const parentField = searchField.split('.')[0];
-      const relevantFields = bsonFields.filter(field => 
-        field.name !== parentField && !searchField.startsWith(field.name));
-      
-      // If we've already found our parent field, all other fields can be skipped
-      if (Math.floor(searchStep) > bsonFields.findIndex(f => f.name === parentField)) {
-        bytesSkipped = relevantFields.reduce((sum, field) => sum + field.size, 0);
       }
     }
     
@@ -248,18 +357,58 @@ const MongoDBBSONDemo = () => {
 
   return (
     <div className="flex flex-col w-full" style={{ backgroundColor: mongoColors.lavender, color: mongoColors.textDark }}>
-      <div style={{ backgroundColor: mongoColors.lightGreen, padding: '0.75rem', marginBottom: '1rem', borderRadius: '0.375rem' }}>
-        <h1 className="text-2xl font-bold mb-2" style={{ color: mongoColors.darkGreen }}>MongoDB BSON Document Structure</h1>
-        <p>BSON stores each field with its <strong>type</strong>, <strong>name</strong>, <strong>length</strong>, and <strong>value</strong>.</p>
-        <p>When MongoDB looks for fields, it starts at the beginning and traverses sequentially.</p>
-        <p>The <strong>length</strong> field allows MongoDB to <strong>skip entire nested structures</strong> when not needed!</p>
+      <div style={{ 
+        backgroundColor: mongoColors.lightGreen, 
+        padding: '0.75rem', 
+        marginBottom: '1rem', 
+        borderRadius: '0.375rem',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start'
+      }}>
+        <div>
+          <h1 className="text-2xl font-bold mb-2" style={{ color: mongoColors.darkGreen }}>MongoDB BSON Document Structure</h1>
+          <p>BSON stores each field with its <strong>type</strong>, <strong>name</strong>, <strong>length</strong>, and <strong>value</strong>.</p>
+          <p>When MongoDB looks for fields, it starts at the beginning and traverses sequentially.</p>
+          <p>The <strong>length</strong> field allows MongoDB to <strong>skip entire nested structures</strong> when not needed!</p>
+        </div>
+        <Button
+          variant="contained"
+          startIcon={<SchoolIcon />}
+          onClick={startWalkthrough}
+          style={{ 
+            backgroundColor: mongoColors.white,
+            color: mongoColors.darkGreen,
+            marginLeft: '1rem'
+          }}
+        >
+          Start Tutorial
+        </Button>
       </div>
       
       <div className="flex flex-col md:flex-row gap-4">
         <div className="w-full md:w-2/5">
-          <div style={{ backgroundColor: mongoColors.darkGreen, color: mongoColors.green, padding: '0.75rem', borderRadius: '0.375rem', marginBottom: '1rem', maxHeight: '24rem', overflow: 'auto' }}>
-            <div className="mb-1" style={{ color: mongoColors.textMedium }}>// MongoDB JSON Document</div>
-            <pre className="text-xs">
+          <Tooltip
+            open={walkthrough.active && walkthrough.step === 0}
+            placement={walkthroughSteps[0].placement}
+            arrow
+            PopperProps={{
+              disablePortal: true,
+              sx: {
+                "& .MuiTooltip-tooltip": {
+                  backgroundColor: "transparent",
+                  padding: 0
+                },
+                "& .MuiTooltip-arrow": {
+                  color: mongoColors.white
+                }
+              }
+            }}
+            title={<WalkthroughTooltip step={0} />}
+          >
+            <div id="json-document" style={{ backgroundColor: mongoColors.darkGreen, color: mongoColors.green, padding: '0.75rem', borderRadius: '0.375rem', marginBottom: '1rem', maxHeight: '24rem', overflow: 'auto' }}>
+              <div className="mb-1" style={{ color: mongoColors.textMedium }}>// MongoDB JSON Document</div>
+              <pre className="text-xs">
 {`{
   _id: ${document._id},
   color: "${document.color}",
@@ -302,33 +451,87 @@ const MongoDBBSONDemo = () => {
   props: { edge: ${document.props.edge}, face: ${document.props.face} },
   coords: [${document.coords.join(', ')}]
 }`}
-            </pre>
-          </div>
+              </pre>
+            </div>
+          </Tooltip>
           
-          <div style={{ backgroundColor: mongoColors.white, padding: '1rem', borderRadius: '0.375rem', marginBottom: '1rem', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)' }}>
-            <h2 className="text-lg font-semibold mb-2" style={{ color: mongoColors.darkGreen }}>Select a Field to Search</h2>
-            <p className="text-sm mb-3">Watch how MongoDB traverses the BSON structure</p>
-            
-            <div className="grid grid-cols-2 gap-2 mb-3">
-              {Object.keys(searchPaths).map(field => (
-                <button 
-                  key={field}
-                  onClick={() => startFieldSearch(field)} 
+          <Tooltip
+            open={walkthrough.active && walkthrough.step === 1}
+            placement={walkthroughSteps[1].placement}
+            arrow
+            PopperProps={{
+              disablePortal: true,
+              sx: {
+                "& .MuiTooltip-tooltip": {
+                  backgroundColor: "transparent",
+                  padding: 0
+                },
+                "& .MuiTooltip-arrow": {
+                  color: mongoColors.white
+                }
+              }
+            }}
+            title={<WalkthroughTooltip step={1} />}
+          >
+            <div id="search-buttons" style={{ backgroundColor: mongoColors.white, padding: '1rem', borderRadius: '0.375rem', marginBottom: '1rem', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)' }}>
+              <h2 className="text-lg font-semibold mb-2" style={{ color: mongoColors.darkGreen }}>Select a Field to Search</h2>
+              <p className="text-sm mb-3">Watch how MongoDB traverses the BSON structure</p>
+              
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                {Object.keys(searchPaths).map(field => (
+                  <button 
+                    key={field}
+                    onClick={() => startFieldSearch(field)} 
+                    style={{ 
+                      padding: '0.5rem 0.75rem',
+                      fontSize: '0.875rem',
+                      borderRadius: '0.25rem',
+                      backgroundColor: searchField === field ? mongoColors.blueGreen : mongoColors.mint,
+                      color: searchField === field ? mongoColors.white : mongoColors.darkGreen
+                    }}
+                  >
+                    {field}
+                  </button>
+                ))}
+              </div>
+              
+              {/* Manual step navigation */}
+              <div className="flex justify-center mt-4">
+                <button
+                  onClick={nextStep}
                   style={{ 
-                    padding: '0.5rem 0.75rem',
-                    fontSize: '0.875rem',
-                    borderRadius: '0.25rem',
-                    backgroundColor: searchField === field ? mongoColors.blueGreen : mongoColors.mint,
-                    color: searchField === field ? mongoColors.white : mongoColors.darkGreen
+                    padding: '0.5rem 1rem', 
+                    backgroundColor: mongoColors.green,
+                    color: mongoColors.darkGreen,
+                    fontWeight: 500,
+                    borderRadius: '0.25rem'
                   }}
                 >
-                  {field}
+                  Next Step →
                 </button>
-              ))}
+              </div>
             </div>
-            
-            {/* Manual step navigation */}
-            <div className="flex justify-center mt-4">
+          </Tooltip>
+          
+          <Tooltip
+            open={walkthrough.active && walkthrough.step === 2}
+            placement={walkthroughSteps[2].placement}
+            arrow
+            PopperProps={{
+              disablePortal: true,
+              sx: {
+                "& .MuiTooltip-tooltip": {
+                  backgroundColor: "transparent",
+                  padding: 0
+                },
+                "& .MuiTooltip-arrow": {
+                  color: mongoColors.white
+                }
+              }
+            }}
+            title={<WalkthroughTooltip step={2} />}
+          >
+            <div id="next-step-button" className="flex justify-center mt-4">
               <button
                 onClick={nextStep}
                 style={{ 
@@ -342,39 +545,7 @@ const MongoDBBSONDemo = () => {
                 Next Step →
               </button>
             </div>
-          </div>
-          
-          {showSizeStats && (
-            <div style={{ padding: '0.75rem', backgroundColor: mongoColors.mint, border: `1px solid ${mongoColors.lightGreen}`, borderRadius: '0.375rem' }}>
-              <h3 className="font-semibold mb-1" style={{ color: mongoColors.darkGreen }}>Performance Analysis:</h3>
-              <div className="text-sm space-y-2">
-                <div className="flex justify-between items-center">
-                  <span>Bytes examined:</span>
-                  <span style={{ fontFamily: 'monospace' }}>{getByteStats().examined} bytes</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span>Bytes skipped:</span>
-                  <span style={{ fontFamily: 'monospace', color: mongoColors.green, fontWeight: 'bold' }}>{getByteStats().skipped} bytes</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span>Total document size:</span>
-                  <span style={{ fontFamily: 'monospace' }}>{getByteStats().total} bytes</span>
-                </div>
-                <div style={{ marginTop: '0.5rem', backgroundColor: mongoColors.lightGreen, height: '1rem', borderRadius: '9999px', overflow: 'hidden' }}>
-                  <div 
-                    style={{ 
-                      backgroundColor: mongoColors.green, 
-                      height: '100%',
-                      width: `${getByteStats().percentSkipped}%` 
-                    }}
-                  ></div>
-                </div>
-                <div className="text-center text-xs">
-                  {getByteStats().percentSkipped}% of document skipped!
-                </div>
-              </div>
-            </div>
-          )}
+          </Tooltip>
         </div>
         
         <div className="w-full md:w-3/5">
@@ -387,81 +558,178 @@ const MongoDBBSONDemo = () => {
               {getStepMessage()}
             </div>
           </div>
+
+          {showSizeStats && (
+            <Tooltip
+              open={walkthrough.active && walkthrough.step === 3}
+              placement={walkthroughSteps[3].placement}
+              arrow
+              PopperProps={{
+                disablePortal: true,
+                sx: {
+                  "& .MuiTooltip-tooltip": {
+                    backgroundColor: "transparent",
+                    padding: 0
+                  },
+                  "& .MuiTooltip-arrow": {
+                    color: mongoColors.white
+                  }
+                }
+              }}
+              title={<WalkthroughTooltip step={3} />}
+            >
+              <div id="performance-analysis" style={{ backgroundColor: mongoColors.mint, padding: '1rem', borderRadius: '0.375rem', marginBottom: '1rem' }}>
+                <div className="flex justify-between items-center">
+                  <h3 className="font-semibold" style={{ color: mongoColors.darkGreen }}>Performance Analysis</h3>
+                  <IconButton
+                    size="small"
+                    onClick={() => setOpenHelpModal(true)}
+                    style={{ color: mongoColors.blueGreen }}
+                  >
+                    <HelpOutlineIcon />
+                  </IconButton>
+                </div>
+                <div className="text-sm space-y-2 mt-2">
+                  <div className="flex justify-between items-center">
+                    <span>Bytes examined:</span>
+                    <span style={{ fontFamily: 'monospace' }}>{getByteStats().examined} bytes</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>Bytes skipped:</span>
+                    <span style={{ fontFamily: 'monospace', color: mongoColors.green, fontWeight: 'bold' }}>{getByteStats().skipped} bytes</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>Total document size:</span>
+                    <span style={{ fontFamily: 'monospace' }}>{getByteStats().total} bytes</span>
+                  </div>
+                  <div style={{ marginTop: '0.5rem', backgroundColor: mongoColors.lightGreen, height: '1rem', borderRadius: '9999px', overflow: 'hidden' }}>
+                    <div 
+                      style={{ 
+                        backgroundColor: mongoColors.green, 
+                        height: '100%',
+                        width: `${getByteStats().percentSkipped}%` 
+                      }}
+                    ></div>
+                  </div>
+                  <div className="text-center text-xs">
+                    {getByteStats().percentSkipped}% of document skipped!
+                  </div>
+                </div>
+              </div>
+            </Tooltip>
+          )}
           
-          <div style={{ overflow: 'hidden', borderRadius: '0.375rem', border: `1px solid ${mongoColors.lightGreen}` }}>
-            <table className="min-w-full" style={{ backgroundColor: mongoColors.white }}>
-              <thead>
-                <tr style={{ backgroundColor: mongoColors.darkGreen, color: mongoColors.white, fontSize: '0.875rem' }}>
-                  <th className="py-2 px-3 text-left">Type</th>
-                  <th className="py-2 px-3 text-left">Name</th>
-                  <th className="py-2 px-3 text-left" style={{ backgroundColor: mongoColors.blueGreen }}>Length</th>
-                  <th className="py-2 px-3 text-left">Value</th>
-                </tr>
-              </thead>
-              <tbody>
-                {bsonFields.map((field, index) => {
-                  const isActive = index === Math.floor(searchStep);
-                  const isHighlighted = index === Math.floor(searchStep) || 
-                    (searchField.includes('.') && 
-                     field.name === searchField.split('.')[0] && 
-                     index < searchStep);
-                  
-                  // Calculate if this field will be skipped
-                  const willBeSkipped = field.nested && 
-                                       searchStep > index && 
-                                       !searchField.startsWith(field.name);
-                  
-                  return (
-                    <tr key={index} style={{ 
-                      borderBottom: '1px solid #edf2f7',
-                      fontSize: '0.875rem',
-                      backgroundColor: isActive ? mongoColors.lightGreen : isHighlighted ? '#E5FFF2' : mongoColors.white,
-                      textDecoration: willBeSkipped ? 'line-through' : 'none',
-                      opacity: willBeSkipped ? 0.5 : 1
-                    }}>
-                      <td className="py-2 px-3">{field.type}</td>
-                      <td className="py-2 px-3 font-medium">
-                        {field.name}
-                        {field.name === searchField.split('.')[0] && searchField.includes('.') && isHighlighted && (
-                          <span style={{ marginLeft: '0.25rem', fontSize: '0.75rem', backgroundColor: mongoColors.blueGreen, color: mongoColors.white, padding: '0 0.25rem', borderRadius: '0.25rem' }}>
-                            looking inside
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-2 px-3" style={{ backgroundColor: field.nested ? mongoColors.mint : 'transparent', fontWeight: field.nested ? 'bold' : 'normal' }}>
-                        {field.length}
-                      </td>
-                      <td className="py-2 px-3 max-w-xs truncate">
-                        {field.value}
-                        {willBeSkipped && (
-                          <span style={{ marginLeft: '0.25rem', fontSize: '0.75rem', backgroundColor: mongoColors.green, color: mongoColors.darkGreen, padding: '0 0.25rem', borderRadius: '0.25rem' }}>
-                            skipped!
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          
-          <div style={{ marginTop: '1rem', backgroundColor: mongoColors.white, padding: '0.75rem', borderRadius: '0.375rem', border: `1px solid ${mongoColors.lightGreen}` }}>
-            <h3 className="font-semibold mb-2" style={{ color: mongoColors.darkGreen }}>Why This Matters</h3>
-            <div className="text-sm space-y-2">
-              <p><strong>In traditional databases</strong>, deeply nested data often causes performance problems.</p>
-              <p><strong>In MongoDB</strong>, the opposite is true - nested documents can improve performance!</p>
-              <p>This is because:</p>
-              <ol className="list-decimal pl-5 space-y-1">
-                <li>The <strong>length</strong> field in BSON lets MongoDB <strong>skip entire nested structures</strong></li>
-                <li>When searching for fields, MongoDB can jump past large nested documents not relevant to the query</li>
-                <li>The more complex and deeply nested your documents, the <strong>more bytes can be skipped</strong></li>
-                <li>This makes operations on specific fields in large documents extremely efficient</li>
-              </ol>
+          <Tooltip
+            open={walkthrough.active && walkthrough.step === 4}
+            placement={walkthroughSteps[4].placement}
+            arrow
+            PopperProps={{
+              disablePortal: true,
+              sx: {
+                "& .MuiTooltip-tooltip": {
+                  backgroundColor: "transparent",
+                  padding: 0
+                },
+                "& .MuiTooltip-arrow": {
+                  color: mongoColors.white
+                }
+              }
+            }}
+            title={<WalkthroughTooltip step={4} />}
+          >
+            <div id="bson-table" style={{ overflow: 'hidden', borderRadius: '0.375rem', border: `1px solid ${mongoColors.lightGreen}` }}>
+              <table className="min-w-full" style={{ backgroundColor: mongoColors.white }}>
+                <thead>
+                  <tr style={{ backgroundColor: mongoColors.darkGreen, color: mongoColors.white, fontSize: '0.875rem' }}>
+                    <th className="py-2 px-3 text-left">Type</th>
+                    <th className="py-2 px-3 text-left">Name</th>
+                    <th className="py-2 px-3 text-left" style={{ backgroundColor: mongoColors.blueGreen }}>Length</th>
+                    <th className="py-2 px-3 text-left">Value</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {bsonFields.map((field, index) => {
+                    const isActive = index === Math.floor(searchStep);
+                    const isHighlighted = index === Math.floor(searchStep) || 
+                      (searchField.includes('.') && 
+                       field.name === searchField.split('.')[0] && 
+                       index < searchStep);
+                    
+                    // Calculate if this field will be skipped
+                    const willBeSkipped = field.nested && 
+                                         searchStep > index && 
+                                         !searchField.startsWith(field.name);
+                    
+                    return (
+                      <tr key={index} style={{ 
+                        borderBottom: '1px solid #edf2f7',
+                        fontSize: '0.875rem',
+                        backgroundColor: isActive ? mongoColors.lightGreen : isHighlighted ? '#E5FFF2' : mongoColors.white,
+                        textDecoration: willBeSkipped ? 'line-through' : 'none',
+                        opacity: willBeSkipped ? 0.5 : 1
+                      }}>
+                        <td className="py-2 px-3">{field.type}</td>
+                        <td className="py-2 px-3 font-medium">
+                          {field.name}
+                          {field.name === searchField.split('.')[0] && searchField.includes('.') && isHighlighted && (
+                            <span style={{ marginLeft: '0.25rem', fontSize: '0.75rem', backgroundColor: mongoColors.blueGreen, color: mongoColors.white, padding: '0 0.25rem', borderRadius: '0.25rem' }}>
+                              looking inside
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-2 px-3" style={{ backgroundColor: field.nested ? mongoColors.mint : 'transparent', fontWeight: field.nested ? 'bold' : 'normal' }}>
+                          {field.length}
+                        </td>
+                        <td className="py-2 px-3 max-w-xs truncate">
+                          {field.value}
+                          {willBeSkipped && (
+                            <span style={{ marginLeft: '0.25rem', fontSize: '0.75rem', backgroundColor: mongoColors.green, color: mongoColors.darkGreen, padding: '0 0.25rem', borderRadius: '0.25rem' }}>
+                              skipped!
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
-          </div>
+          </Tooltip>
         </div>
       </div>
+
+      <Modal
+        open={openHelpModal}
+        onClose={() => setOpenHelpModal(false)}
+        aria-labelledby="why-this-matters-modal"
+      >
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          backgroundColor: mongoColors.white,
+          padding: '2rem',
+          borderRadius: '0.5rem',
+          maxWidth: '600px',
+          width: '90%',
+          outline: 'none',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+        }}>
+          <h3 className="font-semibold mb-4" style={{ color: mongoColors.darkGreen }}>Why This Matters</h3>
+          <div className="text-sm space-y-2">
+            <p><strong>In traditional databases</strong>, deeply nested data often causes performance problems.</p>
+            <p><strong>In MongoDB</strong>, the opposite is true - nested documents can improve performance!</p>
+            <p>This is because:</p>
+            <ol className="list-decimal pl-5 space-y-1">
+              <li>The <strong>length</strong> field in BSON lets MongoDB <strong>skip entire nested structures</strong></li>
+              <li>When searching for fields, MongoDB can jump past large nested documents not relevant to the query</li>
+              <li>The more complex and deeply nested your documents, the <strong>more bytes can be skipped</strong></li>
+              <li>This makes operations on specific fields in large documents extremely efficient</li>
+            </ol>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };
