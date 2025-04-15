@@ -6,22 +6,19 @@ import SchoolIcon from '@mui/icons-material/School';
 // MongoDB Brand Colors
 const mongoColors = {
   // Primary colors
-  green: "#00ED64", // Spring Green (bright green)
-  darkGreen: "#001E2B", // Slate Blue (very dark green/blue)
-  forestGreen: "#116149", // Forest Green
-  evergreen: "#023430", // Evergreen (dark green)
-  lightGreen: "#C3F4D7", // Light mint/green
-  
-  // Secondary colors
-  lavender: "#F9F6FF", // Very light purple
-  blueGreen: "#00684A", // Blue-green
-  mint: "#E3FCF7", // Very light mint
+  green: "#00ED64", // Bright green for CTAs and highlights
+  darkGreen: "#001E2B", // Dark navy/teal for backgrounds
   white: "#FFFFFF",
   
+  // Secondary colors
+  mint: "#C3F4D7", // Light mint for subtle highlights
+  lightGreen: "#E3FCF7", // Very light mint for hover states
+  blueGreen: "#00684A", // Darker green for secondary elements
+  
   // Text colors
-  textDark: "#001E2B", // Dark slate for text
-  textLight: "#FFFFFF", // White text
-  textMedium: "#889397", // Medium gray text
+  textDark: "#001E2B",
+  textLight: "#FFFFFF",
+  textMedium: "#889397" // Medium gray for secondary text
 };
 
 const MongoDBBSONDemo = () => {
@@ -356,20 +353,18 @@ const MongoDBBSONDemo = () => {
   };
 
   return (
-    <div className="flex flex-col w-full" style={{ backgroundColor: mongoColors.lavender, color: mongoColors.textDark }}>
+    <div className="flex flex-col w-full" style={{ backgroundColor: mongoColors.darkGreen, color: mongoColors.textLight }}>
       <div style={{ 
-        backgroundColor: mongoColors.lightGreen, 
-        padding: '0.75rem', 
+        backgroundColor: mongoColors.darkGreen, 
+        padding: '1.5rem', 
         marginBottom: '1rem', 
-        borderRadius: '0.375rem',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start'
+        borderBottom: `1px solid ${mongoColors.blueGreen}`,
+        color: mongoColors.textLight
       }}>
         <div>
-          <h1 className="text-2xl font-bold mb-2" style={{ color: mongoColors.darkGreen }}>MongoDB BSON Document Structure</h1>
-          <p>BSON stores each field with its <strong>type</strong>, <strong>name</strong>, <strong>length</strong>, and <strong>value</strong>.</p>
-          <p>When MongoDB looks for fields, it starts at the beginning and traverses sequentially.</p>
+          <h1 className="text-2xl font-bold mb-4" style={{ color: mongoColors.textLight }}>MongoDB BSON Document Structure</h1>
+          <p className="mb-2">BSON stores each field with its <strong>type</strong>, <strong>name</strong>, <strong>length</strong>, and <strong>value</strong>.</p>
+          <p className="mb-2">When MongoDB looks for fields, it starts at the beginning and traverses sequentially.</p>
           <p>The <strong>length</strong> field allows MongoDB to <strong>skip entire nested structures</strong> when not needed!</p>
         </div>
         <Button
@@ -377,16 +372,17 @@ const MongoDBBSONDemo = () => {
           startIcon={<SchoolIcon />}
           onClick={startWalkthrough}
           style={{ 
-            backgroundColor: mongoColors.white,
+            backgroundColor: mongoColors.green,
             color: mongoColors.darkGreen,
-            marginLeft: '1rem'
+            marginTop: '1rem',
+            fontWeight: 600
           }}
         >
           Start Tutorial
         </Button>
       </div>
       
-      <div className="flex flex-col md:flex-row gap-4">
+      <div className="flex flex-col md:flex-row gap-4 px-4">
         <div className="w-full md:w-2/5">
           <Tooltip
             open={walkthrough.active && walkthrough.step === 0}
@@ -406,9 +402,18 @@ const MongoDBBSONDemo = () => {
             }}
             title={<WalkthroughTooltip step={0} />}
           >
-            <div id="json-document" style={{ backgroundColor: mongoColors.darkGreen, color: mongoColors.green, padding: '0.75rem', borderRadius: '0.375rem', marginBottom: '1rem', maxHeight: '24rem', overflow: 'auto' }}>
-              <div className="mb-1" style={{ color: mongoColors.textMedium }}>// MongoDB JSON Document</div>
-              <pre className="text-xs">
+            <div id="json-document" style={{ 
+              backgroundColor: mongoColors.darkGreen, 
+              border: `1px solid ${mongoColors.blueGreen}`,
+              color: mongoColors.green, 
+              padding: '1rem', 
+              borderRadius: '0.375rem', 
+              marginBottom: '1rem', 
+              maxHeight: '24rem', 
+              overflow: 'auto' 
+            }}>
+              <div className="mb-2" style={{ color: mongoColors.textMedium }}>// MongoDB JSON Document</div>
+              <pre className="text-xs" style={{ color: mongoColors.mint }}>
 {`{
   _id: ${document._id},
   color: "${document.color}",
@@ -473,11 +478,17 @@ const MongoDBBSONDemo = () => {
             }}
             title={<WalkthroughTooltip step={1} />}
           >
-            <div id="search-buttons" style={{ backgroundColor: mongoColors.white, padding: '1rem', borderRadius: '0.375rem', marginBottom: '1rem', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)' }}>
-              <h2 className="text-lg font-semibold mb-2" style={{ color: mongoColors.darkGreen }}>Select a Field to Search</h2>
-              <p className="text-sm mb-3">Watch how MongoDB traverses the BSON structure</p>
+            <div id="search-buttons" style={{ 
+              backgroundColor: mongoColors.white, 
+              padding: '1.5rem', 
+              borderRadius: '0.375rem', 
+              marginBottom: '1rem',
+              boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+            }}>
+              <h2 className="text-lg font-semibold mb-3" style={{ color: mongoColors.darkGreen }}>Select a Field to Search</h2>
+              <p className="text-sm mb-4" style={{ color: mongoColors.textMedium }}>Watch how MongoDB traverses the BSON structure</p>
               
-              <div className="grid grid-cols-2 gap-2 mb-3">
+              <div className="grid grid-cols-2 gap-2 mb-4">
                 {Object.keys(searchPaths).map(field => (
                   <button 
                     key={field}
@@ -486,59 +497,79 @@ const MongoDBBSONDemo = () => {
                       padding: '0.5rem 0.75rem',
                       fontSize: '0.875rem',
                       borderRadius: '0.25rem',
-                      backgroundColor: searchField === field ? mongoColors.blueGreen : mongoColors.mint,
-                      color: searchField === field ? mongoColors.white : mongoColors.darkGreen
+                      backgroundColor: searchField === field ? mongoColors.green : mongoColors.mint,
+                      color: searchField === field ? mongoColors.darkGreen : mongoColors.blueGreen,
+                      fontWeight: 500,
+                      transition: 'all 0.2s ease-in-out'
                     }}
                   >
                     {field}
                   </button>
                 ))}
               </div>
-            </div>
-          </Tooltip>
-          
-          <Tooltip
-            open={walkthrough.active && walkthrough.step === 2}
-            placement={walkthroughSteps[2].placement}
-            arrow
-            PopperProps={{
-              disablePortal: true,
-              sx: {
-                "& .MuiTooltip-tooltip": {
-                  backgroundColor: "transparent",
-                  padding: 0
-                },
-                "& .MuiTooltip-arrow": {
-                  color: mongoColors.white
-                }
-              }
-            }}
-            title={<WalkthroughTooltip step={2} />}
-          >
-            <div id="next-step-button" className="flex justify-center mt-4">
-              <button
-                onClick={nextStep}
-                style={{ 
-                  padding: '0.5rem 1rem', 
-                  backgroundColor: mongoColors.green,
-                  color: mongoColors.darkGreen,
-                  fontWeight: 500,
-                  borderRadius: '0.25rem'
+
+              <Tooltip
+                open={walkthrough.active && walkthrough.step === 2}
+                placement={walkthroughSteps[2].placement}
+                arrow
+                PopperProps={{
+                  disablePortal: true,
+                  sx: {
+                    "& .MuiTooltip-tooltip": {
+                      backgroundColor: "transparent",
+                      padding: 0
+                    },
+                    "& .MuiTooltip-arrow": {
+                      color: mongoColors.white
+                    }
+                  }
                 }}
+                title={<WalkthroughTooltip step={2} />}
               >
-                Next Step →
-              </button>
+                <div id="next-step-button" className="flex justify-center">
+                  <button
+                    onClick={nextStep}
+                    style={{ 
+                      padding: '0.75rem 1.5rem', 
+                      backgroundColor: mongoColors.green,
+                      color: mongoColors.darkGreen,
+                      fontWeight: 600,
+                      borderRadius: '0.25rem',
+                      transition: 'all 0.2s ease-in-out'
+                    }}
+                  >
+                    Next Step →
+                  </button>
+                </div>
+              </Tooltip>
             </div>
           </Tooltip>
         </div>
         
         <div className="w-full md:w-3/5">
-          <div style={{ backgroundColor: mongoColors.white, border: `1px solid ${mongoColors.lightGreen}`, borderRadius: '0.375rem', padding: '0.75rem', marginBottom: '0.75rem' }}>
-            <div className="flex justify-between items-center mb-2">
-              <div className="font-semibold">Searching for: <span style={{ color: mongoColors.blueGreen }}>{searchField}</span></div>
-              <div className="text-sm" style={{ color: mongoColors.textMedium }}>{searchStep > 0 ? `Step ${Math.round(searchStep)}` : 'Ready'}</div>
+          <div style={{ 
+            backgroundColor: mongoColors.white, 
+            border: `1px solid ${mongoColors.mint}`,
+            borderRadius: '0.375rem', 
+            padding: '1rem', 
+            marginBottom: '1rem' 
+          }}>
+            <div className="flex justify-between items-center mb-3">
+              <div className="font-semibold" style={{ color: mongoColors.darkGreen }}>
+                Searching for: <span style={{ color: mongoColors.blueGreen }}>{searchField}</span>
+              </div>
+              <div className="text-sm" style={{ color: mongoColors.textMedium }}>
+                {searchStep > 0 ? `Step ${Math.round(searchStep)}` : 'Ready'}
+              </div>
             </div>
-            <div style={{ padding: '0.5rem', backgroundColor: mongoColors.lightGreen, borderRadius: '0.25rem', fontSize: '0.875rem', minHeight: '2rem' }}>
+            <div style={{ 
+              padding: '0.75rem', 
+              backgroundColor: mongoColors.mint, 
+              borderRadius: '0.25rem', 
+              fontSize: '0.875rem',
+              color: mongoColors.darkGreen,
+              minHeight: '2.5rem' 
+            }}>
               {getStepMessage()}
             </div>
           </div>
@@ -562,8 +593,14 @@ const MongoDBBSONDemo = () => {
               }}
               title={<WalkthroughTooltip step={3} />}
             >
-              <div id="performance-analysis" style={{ backgroundColor: mongoColors.mint, padding: '1rem', borderRadius: '0.375rem', marginBottom: '1rem' }}>
-                <div className="flex justify-between items-center">
+              <div id="performance-analysis" style={{ 
+                backgroundColor: mongoColors.white,
+                border: `1px solid ${mongoColors.mint}`,
+                padding: '1.5rem', 
+                borderRadius: '0.375rem', 
+                marginBottom: '1rem' 
+              }}>
+                <div className="flex justify-between items-center mb-4">
                   <h3 className="font-semibold" style={{ color: mongoColors.darkGreen }}>Performance Analysis</h3>
                   <IconButton
                     size="small"
@@ -573,29 +610,36 @@ const MongoDBBSONDemo = () => {
                     <HelpOutlineIcon />
                   </IconButton>
                 </div>
-                <div className="text-sm space-y-2 mt-2">
+                <div className="text-sm space-y-3">
                   <div className="flex justify-between items-center">
-                    <span>Bytes examined:</span>
-                    <span style={{ fontFamily: 'monospace' }}>{getByteStats().examined} bytes</span>
+                    <span style={{ color: mongoColors.textMedium }}>Bytes examined:</span>
+                    <span style={{ fontFamily: 'monospace', color: mongoColors.darkGreen }}>{getByteStats().examined} bytes</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span>Bytes skipped:</span>
+                    <span style={{ color: mongoColors.textMedium }}>Bytes skipped:</span>
                     <span style={{ fontFamily: 'monospace', color: mongoColors.green, fontWeight: 'bold' }}>{getByteStats().skipped} bytes</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span>Total document size:</span>
-                    <span style={{ fontFamily: 'monospace' }}>{getByteStats().total} bytes</span>
+                    <span style={{ color: mongoColors.textMedium }}>Total document size:</span>
+                    <span style={{ fontFamily: 'monospace', color: mongoColors.darkGreen }}>{getByteStats().total} bytes</span>
                   </div>
-                  <div style={{ marginTop: '0.5rem', backgroundColor: mongoColors.lightGreen, height: '1rem', borderRadius: '9999px', overflow: 'hidden' }}>
+                  <div style={{ 
+                    marginTop: '1rem', 
+                    backgroundColor: mongoColors.mint, 
+                    height: '0.75rem', 
+                    borderRadius: '9999px', 
+                    overflow: 'hidden' 
+                  }}>
                     <div 
                       style={{ 
                         backgroundColor: mongoColors.green, 
                         height: '100%',
-                        width: `${getByteStats().percentSkipped}%` 
+                        width: `${getByteStats().percentSkipped}%`,
+                        transition: 'width 0.3s ease-in-out'
                       }}
                     ></div>
                   </div>
-                  <div className="text-center text-xs">
+                  <div className="text-center text-sm font-medium" style={{ color: mongoColors.blueGreen }}>
                     {getByteStats().percentSkipped}% of document skipped!
                   </div>
                 </div>
@@ -621,14 +665,19 @@ const MongoDBBSONDemo = () => {
             }}
             title={<WalkthroughTooltip step={4} />}
           >
-            <div id="bson-table" style={{ overflow: 'hidden', borderRadius: '0.375rem', border: `1px solid ${mongoColors.lightGreen}` }}>
-              <table className="min-w-full" style={{ backgroundColor: mongoColors.white }}>
+            <div id="bson-table" style={{ 
+              backgroundColor: mongoColors.white,
+              border: `1px solid ${mongoColors.mint}`,
+              borderRadius: '0.375rem',
+              overflow: 'hidden'
+            }}>
+              <table className="min-w-full">
                 <thead>
-                  <tr style={{ backgroundColor: mongoColors.darkGreen, color: mongoColors.white, fontSize: '0.875rem' }}>
-                    <th className="py-2 px-3 text-left">Type</th>
-                    <th className="py-2 px-3 text-left">Name</th>
-                    <th className="py-2 px-3 text-left" style={{ backgroundColor: mongoColors.blueGreen }}>Length</th>
-                    <th className="py-2 px-3 text-left">Value</th>
+                  <tr style={{ backgroundColor: mongoColors.darkGreen, color: mongoColors.textLight, fontSize: '0.875rem' }}>
+                    <th className="py-3 px-4 text-left font-semibold">Type</th>
+                    <th className="py-3 px-4 text-left font-semibold">Name</th>
+                    <th className="py-3 px-4 text-left font-semibold" style={{ backgroundColor: mongoColors.blueGreen }}>Length</th>
+                    <th className="py-3 px-4 text-left font-semibold">Value</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -639,35 +688,54 @@ const MongoDBBSONDemo = () => {
                        field.name === searchField.split('.')[0] && 
                        index < searchStep);
                     
-                    // Calculate if this field will be skipped
                     const willBeSkipped = field.nested && 
                                          searchStep > index && 
                                          !searchField.startsWith(field.name);
                     
                     return (
                       <tr key={index} style={{ 
-                        borderBottom: '1px solid #edf2f7',
+                        borderBottom: `1px solid ${mongoColors.mint}`,
                         fontSize: '0.875rem',
-                        backgroundColor: isActive ? mongoColors.lightGreen : isHighlighted ? '#E5FFF2' : mongoColors.white,
+                        backgroundColor: isActive ? mongoColors.mint : isHighlighted ? mongoColors.lightGreen : mongoColors.white,
                         textDecoration: willBeSkipped ? 'line-through' : 'none',
                         opacity: willBeSkipped ? 0.5 : 1
                       }}>
-                        <td className="py-2 px-3">{field.type}</td>
-                        <td className="py-2 px-3 font-medium">
+                        <td className="py-2 px-4" style={{ color: mongoColors.textDark }}>{field.type}</td>
+                        <td className="py-2 px-4 font-medium" style={{ color: mongoColors.blueGreen }}>
                           {field.name}
                           {field.name === searchField.split('.')[0] && searchField.includes('.') && isHighlighted && (
-                            <span style={{ marginLeft: '0.25rem', fontSize: '0.75rem', backgroundColor: mongoColors.blueGreen, color: mongoColors.white, padding: '0 0.25rem', borderRadius: '0.25rem' }}>
+                            <span style={{ 
+                              marginLeft: '0.5rem', 
+                              fontSize: '0.75rem', 
+                              backgroundColor: mongoColors.green, 
+                              color: mongoColors.darkGreen, 
+                              padding: '0.125rem 0.375rem', 
+                              borderRadius: '0.25rem',
+                              fontWeight: 600
+                            }}>
                               looking inside
                             </span>
                           )}
                         </td>
-                        <td className="py-2 px-3" style={{ backgroundColor: field.nested ? mongoColors.mint : 'transparent', fontWeight: field.nested ? 'bold' : 'normal' }}>
+                        <td className="py-2 px-4" style={{ 
+                          backgroundColor: field.nested ? mongoColors.mint : 'transparent', 
+                          fontWeight: field.nested ? 'bold' : 'normal',
+                          color: field.nested ? mongoColors.blueGreen : mongoColors.textDark
+                        }}>
                           {field.length}
                         </td>
-                        <td className="py-2 px-3 max-w-xs truncate">
+                        <td className="py-2 px-4 max-w-xs truncate" style={{ color: mongoColors.textDark }}>
                           {field.value}
                           {willBeSkipped && (
-                            <span style={{ marginLeft: '0.25rem', fontSize: '0.75rem', backgroundColor: mongoColors.green, color: mongoColors.darkGreen, padding: '0 0.25rem', borderRadius: '0.25rem' }}>
+                            <span style={{ 
+                              marginLeft: '0.5rem', 
+                              fontSize: '0.75rem', 
+                              backgroundColor: mongoColors.green, 
+                              color: mongoColors.darkGreen, 
+                              padding: '0.125rem 0.375rem', 
+                              borderRadius: '0.25rem',
+                              fontWeight: 600
+                            }}>
                               skipped!
                             </span>
                           )}
@@ -701,11 +769,11 @@ const MongoDBBSONDemo = () => {
           boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
         }}>
           <h3 className="font-semibold mb-4" style={{ color: mongoColors.darkGreen }}>Why This Matters</h3>
-          <div className="text-sm space-y-2">
+          <div className="text-sm space-y-3" style={{ color: mongoColors.textDark }}>
             <p><strong>In traditional databases</strong>, deeply nested data often causes performance problems.</p>
             <p><strong>In MongoDB</strong>, the opposite is true - nested documents can improve performance!</p>
             <p>This is because:</p>
-            <ol className="list-decimal pl-5 space-y-1">
+            <ol className="list-decimal pl-5 space-y-2">
               <li>The <strong>length</strong> field in BSON lets MongoDB <strong>skip entire nested structures</strong></li>
               <li>When searching for fields, MongoDB can jump past large nested documents not relevant to the query</li>
               <li>The more complex and deeply nested your documents, the <strong>more bytes can be skipped</strong></li>
