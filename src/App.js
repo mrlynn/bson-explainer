@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Modal, IconButton, Button, Tooltip, Paper } from '@mui/material';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import SchoolIcon from '@mui/icons-material/School';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
+import ReactMarkdown from 'react-markdown';
 
 // MongoDB Brand Colors
 const mongoColors = {
@@ -27,10 +29,71 @@ const MongoDBBSONDemo = () => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [showSizeStats, setShowSizeStats] = useState(false);
   const [openHelpModal, setOpenHelpModal] = useState(false);
+  const [openReadmeModal, setOpenReadmeModal] = useState(false);
   const [walkthrough, setWalkthrough] = useState({
     active: false,
     step: 0
   });
+
+  // README content as a string
+  const readmeContent = `# MongoDB BSON Explainer Demo
+
+A visual, interactive demonstration of how MongoDB's BSON document format works under the hood, with special emphasis on how the document structure enables efficient field access and document traversal.
+
+## Overview
+
+This demo visually explains how MongoDB stores document data in BSON format and traverses documents when processing queries. It specifically demonstrates why nested documents in MongoDB can actually *improve* performance rather than harm it - a concept that's counterintuitive to those coming from traditional databases.
+
+## Core Features
+
+- **Interactive Document Traversal**: Step-by-step visualization of how MongoDB reads through BSON fields
+- **Deep Nesting Demonstration**: Shows how MongoDB handles complex nested document structures
+- **Performance Metrics**: Real-time display of bytes examined vs. bytes skipped during document traversal
+- **Manual Navigation**: Control the pace of demonstration with a Next Step button
+- **MongoDB Brand Styling**: Uses official MongoDB color palette for a professional look
+
+## Understanding the Byte Calculations
+
+The demo shows byte calculations for BSON fields that closely mirror MongoDB's actual BSON format. Here's how the bytes are calculated for each field type:
+
+### Basic Field Structure
+Every BSON field consists of:
+- 1 byte for the type ID
+- Field name (null-terminated string)
+- Length information (if applicable)
+- The actual value
+
+### Size Breakdown by Type
+1. **Integer (int32)**
+   - Type ID: 1 byte
+   - Field name + null terminator
+   - Value: 4 bytes
+   Example: \`_id\` field = 12 bytes total
+
+2. **String**
+   - Type ID: 1 byte
+   - Field name + null terminator
+   - String length: 4 bytes
+   - String value + null terminator
+   Example: \`color: "Red"\` = 10 bytes total
+
+3. **Nested Document**
+   - Type ID: 1 byte
+   - Field name + null terminator
+   - Document length: 4 bytes
+   - Content bytes
+   Example: \`metadata\` document = 205 bytes total
+
+4. **Array**
+   - Similar to nested document
+   - Each element has a numeric string key
+   Example: \`coords\` array = 22 bytes total
+
+### Length Field Importance
+The length field in nested documents is crucial because:
+1. It's stored at the start of the document/array
+2. It tells MongoDB exactly how many bytes to skip
+3. It enables MongoDB to jump past irrelevant nested structures without parsing them`;
 
   // More complex document structure with deeper nesting
   const document = {
@@ -373,19 +436,32 @@ const MongoDBBSONDemo = () => {
           <p className="mb-2">When MongoDB looks for fields, it starts at the beginning and traverses sequentially.</p>
           <p>The <strong>length</strong> field allows MongoDB to <strong>skip entire nested structures</strong> when not needed!</p>
         </div>
-        <Button
-          variant="contained"
-          startIcon={<SchoolIcon />}
-          onClick={startWalkthrough}
-          style={{ 
-            backgroundColor: mongoColors.green,
-            color: mongoColors.darkGreen,
-            marginTop: '1rem',
-            fontWeight: 600
-          }}
-        >
-          Start Tutorial
-        </Button>
+        <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+          <Button
+            variant="contained"
+            startIcon={<SchoolIcon />}
+            onClick={startWalkthrough}
+            style={{ 
+              backgroundColor: mongoColors.green,
+              color: mongoColors.darkGreen,
+              fontWeight: 600
+            }}
+          >
+            Start Tutorial
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<MenuBookIcon />}
+            onClick={() => setOpenReadmeModal(true)}
+            style={{ 
+              borderColor: mongoColors.green,
+              color: mongoColors.green,
+              fontWeight: 600
+            }}
+          >
+            View Documentation
+          </Button>
+        </div>
       </div>
       
       <div className="flex flex-col md:flex-row gap-4 px-4">
@@ -785,6 +861,173 @@ const MongoDBBSONDemo = () => {
               <li>The more complex and deeply nested your documents, the <strong>more bytes can be skipped</strong></li>
               <li>This makes operations on specific fields in large documents extremely efficient</li>
             </ol>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        open={openReadmeModal}
+        onClose={() => setOpenReadmeModal(false)}
+        aria-labelledby="readme-modal"
+      >
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          backgroundColor: mongoColors.white,
+          padding: '2rem',
+          borderRadius: '0.5rem',
+          maxWidth: '800px',
+          width: '90%',
+          maxHeight: '80vh',
+          overflow: 'auto',
+          outline: 'none',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+        }}>
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            marginBottom: '1.5rem',
+            position: 'sticky',
+            top: 0,
+            backgroundColor: mongoColors.white,
+            padding: '0.5rem 0',
+            borderBottom: `1px solid ${mongoColors.mint}`
+          }}>
+            <h2 style={{ 
+              color: mongoColors.darkGreen,
+              margin: 0,
+              fontSize: '1.5rem',
+              fontWeight: 600
+            }}>
+              Documentation
+            </h2>
+            <IconButton
+              onClick={() => setOpenReadmeModal(false)}
+              style={{ color: mongoColors.blueGreen }}
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 18L18 6M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </IconButton>
+          </div>
+          <div style={{ 
+            color: mongoColors.textDark,
+            padding: '1rem'
+          }}>
+            <div className="markdown-body" style={{
+              '& > *:first-child': {
+                marginTop: 0
+              },
+              '& h1': {
+                fontSize: '2.5rem',
+                fontWeight: 700,
+                marginBottom: '1.5rem',
+                color: mongoColors.darkGreen,
+                borderBottom: `2px solid ${mongoColors.mint}`,
+                paddingBottom: '0.5rem'
+              },
+              '& h2': {
+                fontSize: '2rem',
+                fontWeight: 600,
+                marginTop: '2.5rem',
+                marginBottom: '1rem',
+                color: mongoColors.darkGreen,
+                borderBottom: `1px solid ${mongoColors.mint}`,
+                paddingBottom: '0.5rem'
+              },
+              '& h3': {
+                fontSize: '1.5rem',
+                fontWeight: 600,
+                marginTop: '2rem',
+                marginBottom: '1rem',
+                color: mongoColors.darkGreen
+              },
+              '& p': {
+                marginBottom: '1.5rem',
+                lineHeight: '1.7',
+                fontSize: '1.1rem'
+              },
+              '& ul, & ol': {
+                marginBottom: '1.5rem',
+                paddingLeft: '2rem'
+              },
+              '& ul': {
+                listStyleType: 'disc'
+              },
+              '& ol': {
+                listStyleType: 'decimal'
+              },
+              '& li': {
+                marginBottom: '0.75rem',
+                fontSize: '1.1rem',
+                lineHeight: '1.7'
+              },
+              '& li > p': {
+                marginBottom: '0.75rem'
+              },
+              '& code': {
+                backgroundColor: mongoColors.mint,
+                padding: '0.2rem 0.4rem',
+                borderRadius: '0.25rem',
+                fontSize: '0.9em',
+                fontFamily: '"Monaco", "Menlo", "Ubuntu Mono", "Consolas", "source-code-pro", monospace'
+              },
+              '& pre': {
+                backgroundColor: mongoColors.mint,
+                padding: '1rem',
+                borderRadius: '0.5rem',
+                overflow: 'auto',
+                marginBottom: '1.5rem'
+              },
+              '& pre code': {
+                backgroundColor: 'transparent',
+                padding: 0,
+                fontSize: '0.9rem',
+                lineHeight: '1.5'
+              },
+              '& strong': {
+                fontWeight: 600,
+                color: mongoColors.blueGreen
+              },
+              '& em': {
+                fontStyle: 'italic'
+              },
+              '& blockquote': {
+                borderLeft: `4px solid ${mongoColors.mint}`,
+                paddingLeft: '1rem',
+                marginLeft: 0,
+                marginRight: 0,
+                marginBottom: '1.5rem',
+                color: mongoColors.textMedium,
+                fontSize: '1.1rem',
+                fontStyle: 'italic'
+              },
+              '& hr': {
+                border: 'none',
+                borderTop: `1px solid ${mongoColors.mint}`,
+                margin: '2rem 0'
+              },
+              '& table': {
+                width: '100%',
+                marginBottom: '1.5rem',
+                borderCollapse: 'collapse'
+              },
+              '& th, & td': {
+                padding: '0.75rem',
+                borderBottom: `1px solid ${mongoColors.mint}`,
+                textAlign: 'left'
+              },
+              '& th': {
+                fontWeight: 600,
+                backgroundColor: mongoColors.mint,
+                color: mongoColors.darkGreen
+              }
+            }}>
+              <ReactMarkdown children={readmeContent} />
+            </div>
           </div>
         </div>
       </Modal>
