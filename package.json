@@ -1,5 +1,5 @@
 {
-  "name": "bson-explainer",
+  "name": "mongodb-rag-chunking-demo",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -7,47 +7,33 @@
     "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^7.0.2",
     "@mui/material": "^7.0.2",
-    "@tailwindcss/postcss7-compat": "^2.2.17",
-    "@testing-library/dom": "^10.4.0",
-    "@testing-library/jest-dom": "^6.6.3",
-    "@testing-library/react": "^16.3.0",
-    "@testing-library/user-event": "^13.5.0",
-    "postcss-flexbugs-fixes": "^5.0.2",
-    "postcss-normalize": "^13.0.1",
-    "postcss-preset-env": "^10.1.5",
+    "d3": "^7.9.0",
+    "mongodb": "^6.3.0",
+    "next": "^14.0.4",
+    "openai": "^4.24.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-markdown": "^10.1.0",
-    "react-scripts": "5.0.1",
     "tailwindcss": "^3.3.0",
+    "umap-js": "^1.3.3",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
   },
   "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
+    "extends": "next/core-web-vitals"
   },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+  "engines": {
+    "node": ">=18.17.0"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.21",
+    "eslint": "^8.56.0",
+    "eslint-config-next": "^14.0.4",
     "postcss": "^8.5.3"
   }
 }

@@ -1,39 +1,41 @@
-# MongoDB BSON Explainer Demo
+# MongoDB RAG Chunking Lifecycle Demo
 
-A visual, interactive demonstration of how MongoDB's BSON document format works under the hood, with special emphasis on how the document structure enables efficient field access and document traversal.
+An interactive application demonstrating how document chunking strategies affect the Retrieval Augmented Generation (RAG) pipeline with real MongoDB Atlas Vector Search and OpenAI integration.
 
-![MongoDB BSON Explainer Demo Screenshot](screenshot.png)
+![MongoDB RAG Chunking Lifecycle Demo Screenshot](screenshot.png)
 
 ## Overview
 
-This demo visually explains how MongoDB stores document data in BSON format and traverses documents when processing queries. It specifically demonstrates why nested documents in MongoDB can actually *improve* performance rather than harm it - a concept that's counterintuitive to those coming from traditional databases.
+This application provides a complete end-to-end demonstration of how chunking decisions impact RAG application performance. It guides you through all four stages of the RAG lifecycle (chunking, embedding, retrieval, and generation) with real data processing using MongoDB Atlas and OpenAI.
 
 ## Core Features
 
-- **Interactive Document Traversal**: Step-by-step visualization of how MongoDB reads through BSON fields
-- **Deep Nesting Demonstration**: Shows how MongoDB handles complex nested document structures
-- **Performance Metrics**: Real-time display of bytes examined vs. bytes skipped during document traversal
-- **Manual Navigation**: Control the pace of demonstration with a Next Step button
-- **MongoDB Brand Styling**: Uses official MongoDB color palette for a professional look
+- **Real MongoDB Atlas Integration**: Store and query vectors in a real MongoDB Atlas cluster
+- **OpenAI Embeddings**: Generate real vector embeddings using OpenAI's embedding models
+- **Multiple Chunking Strategies**: Compare five different chunking methods with real performance metrics
+- **Vector Space Visualization**: See how chunks are represented and clustered in vector space
+- **MongoDB Vector Search**: Execute real $vectorSearch queries with filters
+- **Fully Functional RAG Chatbot**: Test different chunking approaches with a real LLM-powered chatbot
+- **Document Analysis**: Automatic chunking strategy recommendations for different document types
+- **Performance Metrics**: Real-world measurements of chunking impact on retrieval quality
 
 ## What This Demo Explains
 
-This demo illustrates several important MongoDB concepts:
+This demo illustrates several important RAG concepts with real data:
 
-1. **BSON Format Basics**: How MongoDB documents are stored in Binary JSON with type, name, length, and value
-2. **Sequential Field Access**: MongoDB's process of traversing fields from the beginning of a document
-3. **Length-Based Skipping**: How the length field enables MongoDB to skip entire nested structures
-4. **Performance Advantage**: Demonstrates why nested documents can improve query performance
-
-## Important Clarification
-
-This demo shows how MongoDB handles **non-indexed** field queries. With indexed fields, MongoDB would use the index to locate documents directly rather than performing a collection scan. However, even with indexes, this BSON traversal still matters when accessing fields within located documents.
+1. **Document Chunking**: How different strategies affect context preservation and retrieval precision
+2. **Vector Embeddings**: Real embeddings from OpenAI showing how chunks cluster in semantic space
+3. **Semantic Retrieval**: Real vector similarity retrieval with MongoDB Atlas Vector Search
+4. **RAG Response Generation**: How retrieved chunks inform AI responses with actual LLM integration
+5. **MongoDB Vector Search**: Practical implementation with real queries and performance metrics
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js (v14+)
+- Node.js (v18.17.0+)
+- MongoDB Atlas cluster (M10 or higher) with Vector Search enabled
+- OpenAI API key
 - npm or yarn
 - A modern web browser
 
@@ -41,8 +43,8 @@ This demo shows how MongoDB handles **non-indexed** field queries. With indexed 
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/yourusername/mongodb-bson-explainer.git
-   cd mongodb-bson-explainer
+   git clone https://github.com/yourusername/mongodb-rag-chunking-demo.git
+   cd mongodb-rag-chunking-demo
    ```
 
 2. Install dependencies:
@@ -52,173 +54,162 @@ This demo shows how MongoDB handles **non-indexed** field queries. With indexed 
    yarn
    ```
 
-3. Start the development server:
+3. Copy the `.env.local.example` file to `.env.local` and add your API keys:
+   ```
+   MONGODB_URI=mongodb+srv://username:password@your-cluster.mongodb.net/
+   MONGODB_DB=rag_demo
+   OPENAI_API_KEY=your-openai-api-key
+   ```
+
+4. Start the development server:
    ```bash
-   npm start
+   npm run dev
    # or with yarn
-   yarn start
+   yarn dev
    ```
 
-4. Open your browser and navigate to `http://localhost:3000`
+5. Open your browser and navigate to `http://localhost:3000`
 
-## Using the Demo in Presentations
+## Using the Demo
 
-This demo is designed to be used in educational presentations about MongoDB. Here are some tips for presenting effectively:
+The application is divided into four tabs, each representing a stage in the RAG lifecycle:
 
-1. **Start Simple**: Begin with a basic field like "color" to show the fundamental traversal process
-2. **Progress to Nested Fields**: Move to deeper fields like "metadata.department.manager.name" to show the traversal of nested structures
-3. **Highlight the Performance Metrics**: Point out how much of the document gets skipped thanks to the length field
-4. **Compare with Traditional Databases**: Emphasize that while other databases often perform worse with nested data, MongoDB is optimized for it
+### 1. Chunking Stage
 
-## Demo Structure
+- Load documents from various sources (local upload, URL, or sample documents)
+- Process documents with five chunking strategies:
+  - **No Chunking**: Stores the entire document as a single chunk
+  - **Delimiter**: Splits text at specific characters (periods, paragraph breaks, etc.)
+  - **Fixed Size with Overlap**: Creates chunks of consistent token length with configurable overlap
+  - **Recursive**: Breaks at natural boundaries like sentence or paragraph endings
+  - **Semantic**: Uses context-aware chunking to keep related content together
+- Adjust settings like chunk size, overlap, and delimiters
+- Save chunks to MongoDB Atlas with metadata
 
-### Components
+### 2. Embedding Stage
 
-- `MongoDBBSONDemo.js`: The main React component that renders the entire demo
-- `App.js`: Simple wrapper that renders the demo component
-- Various CSS/styling utilities for MongoDB brand colors
+- Generate real embeddings using OpenAI's embedding models
+- Visualize embeddings in a dimensionally-reduced 2D or 3D space
+- Examine embedding clusters and see how similar content groups together
+- Create and deploy a MongoDB Atlas Vector Search index
 
-### Data Model
+### 3. Retrieval Stage
 
-The demo uses a sample document with multiple levels of nesting:
+- Enter search queries to test real vector similarity retrieval
+- Experiment with MongoDB Vector Search parameters (numCandidates, limit, etc.)
+- Apply metadata filters to narrow search results
+- Compare retrieval performance across different chunking strategies using real metrics
 
-```javascript
-{
-  _id: 81873,
-  color: "Red",
-  size: "Small",
-  shape: "Cylinder",
-  metadata: {
-    created: "2023-05-15",
-    updated: "2023-11-22",
-    tags: ["inventory", "retail", "featured"],
-    department: {
-      name: "Home Goods",
-      floor: 3,
-      manager: {
-        id: 45892,
-        name: "Sarah Johnson",
-        contact: {
-          email: "sjohnson@example.com",
-          phone: "555-1234"
-        }
-      }
-    }
-  },
-  inventory: {
-    quantity: 157,
-    location: {
-      warehouse: "Central",
-      aisle: "B",
-      shelf: 12,
-      bin: 45
-    },
-    pricing: {
-      regular: 29.99,
-      sale: 24.99,
-      discount: {
-        percent: 15,
-        validUntil: "2023-12-31"
-      }
-    }
-  },
-  props: { edge: 2, face: 3 },
-  coords: [2.2, 5.1]
-}
-```
+### 4. Generation Stage
 
-## Customization
-
-### Adding New Fields to Search
-
-To add new searchable fields to the demo:
-
-1. Add the field path to the `searchPaths` object in `MongoDBBSONDemo.js`:
-   ```javascript
-   const searchPaths = {
-     // Existing paths...
-     'your.new.field.path': [0, 1, 2, 3, 4, 5], // Define the steps
-   };
-   ```
-
-2. Update the button grid to include your new field option.
-
-### Modifying the Document Structure
-
-To change the example document:
-
-1. Update the `document` object in `MongoDBBSONDemo.js`
-2. Update the corresponding `bsonFields` array to match your new structure
-3. Adjust the `contains` arrays for nested objects if needed
+- Chat with a fully-functional RAG-powered assistant
+- Observe which chunks are retrieved for each question
+- View the complete prompt construction with retrieved context
+- Analyze how chunking quality impacts answer accuracy and completeness
 
 ## Technical Implementation
 
-This demo is built with React and uses:
+This application integrates several key technologies:
 
-- React Hooks for state management
-- Tailwind CSS utility classes (modified with custom MongoDB colors)
-- CSS-in-JS for MongoDB brand styling
-- Dynamic calculations for performance metrics
+- **Next.js App Router** for frontend UI and API routes
+- **MongoDB Atlas** for document and vector storage
+- **MongoDB Atlas Vector Search** for semantic retrieval
+- **OpenAI API** for embeddings and completions
+- **Dimension reduction techniques** (UMAP) for vector visualization
 
-## Understanding the Byte Calculations
+### MongoDB Integration
 
-The demo shows byte calculations for BSON fields that closely mirror MongoDB's actual BSON format. Here's how the bytes are calculated for each field type:
+The application uses MongoDB Node.js SDK to:
 
-### Basic Field Structure
-Every BSON field consists of:
-- 1 byte for the type ID
-- Field name (null-terminated string)
-- Length information (if applicable)
-- The actual value
+```javascript
+// Store chunks in MongoDB
+await db.collection('chunks').insertMany(vectorDocuments);
 
-### Size Breakdown by Type
-1. **Integer (int32)**
-   - Type ID: 1 byte
-   - Field name + null terminator
-   - Value: 4 bytes
-   Example: `_id` field = 12 bytes total
+// Create a vector search index
+await db.command({
+  createSearchIndex: 'chunks',
+  definition: {
+    mappings: {
+      dynamic: true,
+      fields: {
+        embedding: {
+          dimensions: 1536,
+          similarity: 'cosine',
+          type: 'knnVector'
+        }
+      }
+    }
+  }
+});
 
-2. **String**
-   - Type ID: 1 byte
-   - Field name + null terminator
-   - String length: 4 bytes
-   - String value + null terminator
-   Example: `color: "Red"` = 10 bytes total
+// Perform vector search
+const results = await db.collection('chunks').aggregate([
+  {
+    $vectorSearch: {
+      index: "embedding_index",
+      queryVector: queryEmbedding,
+      path: "embedding",
+      numCandidates: 100,
+      limit: 5,
+      filter: { "metadata.source": documentType }
+    }
+  },
+  {
+    $project: {
+      _id: 1,
+      text: 1,
+      metadata: 1,
+      score: { $meta: "vectorSearchScore" }
+    }
+  }
+]).toArray();
+```
 
-3. **Nested Document**
-   - Type ID: 1 byte
-   - Field name + null terminator
-   - Document length: 4 bytes
-   - Content bytes
-   Example: `metadata` document = 205 bytes total
+### OpenAI Integration
 
-4. **Array**
-   - Similar to nested document
-   - Each element has a numeric string key
-   Example: `coords` array = 22 bytes total
+The application uses OpenAI API for embeddings and completions:
 
-### Length Field Importance
-The length field in nested documents is crucial because:
-1. It's stored at the start of the document/array
-2. It tells MongoDB exactly how many bytes to skip
-3. It enables MongoDB to jump past irrelevant nested structures without parsing them
+```javascript
+// Generate embeddings
+const response = await openai.embeddings.create({
+  model: process.env.EMBEDDING_MODEL,
+  input: textChunk,
+  encoding_format: "float"
+});
+const embedding = response.data[0].embedding;
 
-### Example Calculation
-For the nested path `metadata.department.manager.name`:
-1. Start at document beginning (0 bytes)
-2. Read `_id` field (12 bytes)
-3. Read `color` field (10 bytes)
-4. Find `metadata` field, read length (205 bytes)
-5. Inside metadata, traverse to `department` (120 bytes)
-6. Inside department, find `manager` (85 bytes)
-7. Inside manager, find `name` (20 bytes)
+// Generate completion with retrieved context
+const completion = await openai.chat.completions.create({
+  model: process.env.COMPLETION_MODEL,
+  messages: [
+    { role: "system", content: systemPrompt },
+    ...chatHistory,
+    { role: "user", content: finalPrompt }
+  ],
+  temperature: 0.7,
+  max_tokens: 500,
+  stream: true
+});
+```
 
-The demo's performance metrics show how many bytes were:
-- Examined: Fields that had to be read
-- Skipped: Fields that could be bypassed using length information
-- Total: Complete document size in bytes
+## Deployment and Collection Structure
 
-This byte-level efficiency is why nested documents in MongoDB can actually improve performance rather than degrade it.
+The demo creates the following collections in your MongoDB Atlas database:
+
+1. `documents` - Stores original documents
+2. `chunks` - Stores chunked text with embeddings
+3. `conversations` - Stores chat histories
+4. `metrics` - Stores performance metrics from different chunking strategies
+
+## Chunking Impact Analysis
+
+The application provides real performance metrics including:
+
+1. **Mean Reciprocal Rank (MRR)**: Measures the relevance of top retrieved chunks
+2. **Context Coverage**: Percentage of necessary information captured in retrievals
+3. **Retrieval Latency**: Time required to retrieve relevant chunks
+4. **LLM Token Usage**: Token efficiency with different chunking methods
+5. **Answer Accuracy**: Quality of responses with different chunking methods
 
 ## Contributing
 
@@ -230,9 +221,10 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Acknowledgments
 
-- MongoDB Documentation for reference on BSON internals
+- MongoDB Documentation for Vector Search reference
+- OpenAI API for embeddings and completions
 - MongoDB Brand Guidelines for color palette and styling
 
 ---
 
-Created for MongoDB Developer Days © 2025# ai-rag-chunking-explainer
+Created for MongoDB Developer Days © 2025

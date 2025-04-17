@@ -1,9 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { Modal, IconButton, Button, Tooltip, Paper } from '@mui/material';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import SchoolIcon from '@mui/icons-material/School';
-import MenuBookIcon from '@mui/icons-material/MenuBook';
-import ReactMarkdown from 'react-markdown';
+import React, { useState, useEffect, useRef } from 'react';
 
 // MongoDB Brand Colors
 const mongoColors = {
@@ -23,1038 +18,1915 @@ const mongoColors = {
   textMedium: "#889397" // Medium gray for secondary text
 };
 
-const MongoDBBSONDemo = () => {
-  const [searchField, setSearchField] = useState('color');
-  const [searchStep, setSearchStep] = useState(0);
-  const [isAnimating, setIsAnimating] = useState(false);
-  const [showSizeStats, setShowSizeStats] = useState(false);
-  const [openHelpModal, setOpenHelpModal] = useState(false);
-  const [openReadmeModal, setOpenReadmeModal] = useState(false);
-  const [walkthrough, setWalkthrough] = useState({
-    active: false,
-    step: 0
-  });
+// Pre-defined sample texts for different document types
+const sampleTexts = {
+  documentation: `MongoDB is a source-available cross-platform document-oriented database program. Classified as a NoSQL database program, MongoDB uses JSON-like documents with optional schemas. MongoDB is developed by MongoDB Inc. and licensed under the Server Side Public License.
 
-  // README content as a string
-  const readmeContent = `# MongoDB BSON Explainer Demo
+MongoDB stores data in flexible, JSON-like documents, meaning fields can vary from document to document and data structure can be changed over time.
 
-A visual, interactive demonstration of how MongoDB's BSON document format works under the hood, with special emphasis on how the document structure enables efficient field access and document traversal.
+The document model maps to the objects in your application code, making data easy to work with. Ad hoc queries, indexing, and real time aggregation provide powerful ways to access and analyze your data.
 
-## Overview
+MongoDB is a distributed database at its core, so high availability, horizontal scaling, and geographic distribution are built in and easy to use. MongoDB Atlas is a fully-managed cloud database that handles all the complexity of deploying, managing, and healing your deployments on the cloud service provider of your choice (AWS, Azure, and GCP).`,
 
-This demo visually explains how MongoDB stores document data in BSON format and traverses documents when processing queries. It specifically demonstrates why nested documents in MongoDB can actually *improve* performance rather than harm it - a concept that's counterintuitive to those coming from traditional databases.
+  article: `# Understanding Vector Search in MongoDB
+  
+Vector search is a technique used in information retrieval and machine learning that enables searching for documents based on their vector representations (embeddings) rather than exact keyword matches.
 
-## Core Features
+In the context of MongoDB, vector search allows for semantic searches where results are returned based on meaning rather than just matching text. This is particularly useful for applications like:
 
-- **Interactive Document Traversal**: Step-by-step visualization of how MongoDB reads through BSON fields
-- **Deep Nesting Demonstration**: Shows how MongoDB handles complex nested document structures
-- **Performance Metrics**: Real-time display of bytes examined vs. bytes skipped during document traversal
-- **Manual Navigation**: Control the pace of demonstration with a Next Step button
-- **MongoDB Brand Styling**: Uses official MongoDB color palette for a professional look
+- Semantic search engines
+- Recommendation systems
+- Image similarity search
+- Natural language processing applications
+- Anomaly detection
 
-## Understanding the Byte Calculations
+MongoDB Atlas Vector Search uses a combination of advanced indexing techniques and approximate nearest neighbor algorithms to efficiently find similar vectors in large datasets.
 
-The demo shows byte calculations for BSON fields that closely mirror MongoDB's actual BSON format. Here's how the bytes are calculated for each field type:
+To use vector search effectively, documents need to be properly chunked and embedded using techniques appropriate for your specific use case.`,
 
-### Basic Field Structure
-Every BSON field consists of:
-- 1 byte for the type ID
-- Field name (null-terminated string)
-- Length information (if applicable)
-- The actual value
+  technicalSpec: `Technical Requirements for RAG Application
+  
+1. Data Processing Pipeline
+   - Extract text from various sources (PDF, HTML, Markdown)
+   - Clean and normalize text
+   - Implement chunking strategy based on document type
+   - Generate and store embeddings
 
-### Size Breakdown by Type
-1. **Integer (int32)**
-   - Type ID: 1 byte
-   - Field name + null terminator
-   - Value: 4 bytes
-   Example: \`_id\` field = 12 bytes total
+2. Vector Database Requirements
+   - MongoDB Atlas with Vector Search capability
+   - Minimum M10 cluster size
+   - Storage capacity for at least 10 million vectors
+   - Vector dimension: 1536 (OpenAI embeddings)
 
-2. **String**
-   - Type ID: 1 byte
-   - Field name + null terminator
-   - String length: 4 bytes
-   - String value + null terminator
-   Example: \`color: "Red"\` = 10 bytes total
+3. Embedding Model Requirements
+   - OpenAI text-embedding-3-small or text-embedding-3-large
+   - Alternative option: Sentence Transformers for self-hosting
 
-3. **Nested Document**
-   - Type ID: 1 byte
-   - Field name + null terminator
-   - Document length: 4 bytes
-   - Content bytes
-   Example: \`metadata\` document = 205 bytes total
+4. Retrieval Component
+   - kNN search with cosine similarity
+   - Re-ranking capability for improving precision
+   - Configurable result limits
+   - Metadata filtering options
 
-4. **Array**
-   - Similar to nested document
-   - Each element has a numeric string key
-   Example: \`coords\` array = 22 bytes total
+5. Response Generation
+   - GPT-4o or equivalent LLM integration
+   - Prompt engineering for consistent responses
+   - Citation and source tracking`,
 
-### Length Field Importance
-The length field in nested documents is crucial because:
-1. It's stored at the start of the document/array
-2. It tells MongoDB exactly how many bytes to skip
-3. It enables MongoDB to jump past irrelevant nested structures without parsing them`;
+  conversation: `User: How do I create a vector search index in MongoDB Atlas?
 
-  // More complex document structure with deeper nesting
-  const document = {
-    _id: 81873,
-    color: "Red",
-    size: "Small",
-    shape: "Cylinder",
-    metadata: {
-      created: "2023-05-15",
-      updated: "2023-11-22",
-      tags: ["inventory", "retail", "featured"],
-      department: {
-        name: "Home Goods",
-        floor: 3,
-        manager: {
-          id: 45892,
-          name: "Sarah Johnson",
-          contact: {
-            email: "sjohnson@example.com",
-            phone: "555-1234"
-          }
-        }
+AI: To create a vector search index in MongoDB Atlas, follow these steps:
+
+1. Log in to your MongoDB Atlas account
+2. Navigate to your cluster and select the "Search" tab
+3. Click "Create Search Index"
+4. Choose "JSON Editor" for the creation method
+5. Configure your index with a definition like this:
+
+\`\`\`json
+{
+  "mappings": {
+    "dynamic": true,
+    "fields": {
+      "embedding": {
+        "dimensions": 1536,
+        "similarity": "cosine",
+        "type": "knnVector"
       }
-    },
-    inventory: {
-      quantity: 157,
-      location: {
-        warehouse: "Central",
-        aisle: "B",
-        shelf: 12,
-        bin: 45
-      },
-      pricing: {
-        regular: 29.99,
-        sale: 24.99,
-        discount: {
-          percent: 15,
-          validUntil: "2023-12-31"
-        }
+    }
+  }
+}
+\`\`\`
+
+6. Adjust the "dimensions" value to match your embedding model (e.g., 1536 for OpenAI embeddings)
+7. Save and create the index
+
+Note that you'll need to have documents with embedding vectors already stored in your collection. The vector search index will reference these embedding fields in your documents.
+
+User: Can I filter my vector search results based on metadata fields?
+
+AI: Yes, you can definitely filter vector search results based on metadata fields in MongoDB Atlas. This is one of the powerful features of MongoDB's vector search implementation.
+
+When performing a vector search query, you can add filter conditions using the standard MongoDB query operators. Here's an example:
+
+\`\`\`javascript
+db.collection.aggregate([
+  {
+    $vectorSearch: {
+      index: "vector_index",
+      path: "embedding",
+      queryVector: [0.23, -0.45, ...],
+      numCandidates: 100,
+      limit: 10,
+      filter: { 
+        "metadata.category": "electronics",
+        "metadata.inStock": true
       }
-    },
-    props: { edge: 2, face: 3 },
-    coords: [2.2, 5.1]
-  };
-
-  // BSON representation with visualization properties and deeper nesting
-  const bsonFields = [
-    { type: "09 (int32)", name: "_id", length: "", value: "00,01,3F,D3", size: 12 },
-    { type: "02 (string)", name: "color", length: "04", value: "Red", size: 10 },
-    { type: "02 (string)", name: "size", length: "05", value: "Small", size: 12 },
-    { type: "02 (string)", name: "shape", length: "09", value: "Cylinder", size: 16 },
-    { type: "03 (document)", name: "metadata", length: "198", value: "{created, updated, tags, department}", nested: true, size: 205, 
-      contains: [
-        { name: "created", value: "2023-05-15", size: 18 },
-        { name: "updated", value: "2023-11-22", size: 18 },
-        { name: "tags", value: "[inventory, retail, featured]", size: 35 },
-        { name: "department", value: "{name, floor, manager}", nested: true, size: 120,
-          contains: [
-            { name: "name", value: "Home Goods", size: 18 },
-            { name: "floor", value: "3", size: 10 },
-            { name: "manager", value: "{id, name, contact}", nested: true, size: 85,
-              contains: [
-                { name: "id", value: "45892", size: 12 },
-                { name: "name", value: "Sarah Johnson", size: 20 },
-                { name: "contact", value: "{email, phone}", nested: true, size: 45,
-                  contains: [
-                    { name: "email", value: "sjohnson@example.com", size: 28 },
-                    { name: "phone", value: "555-1234", size: 14 }
-                  ]
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    { type: "03 (document)", name: "inventory", length: "147", value: "{quantity, location, pricing}", nested: true, size: 155,
-      contains: [
-        { name: "quantity", value: "157", size: 12 },
-        { name: "location", value: "{warehouse, aisle, shelf, bin}", nested: true, size: 55,
-          contains: [
-            { name: "warehouse", value: "Central", size: 15 },
-            { name: "aisle", value: "B", size: 8 },
-            { name: "shelf", value: "12", size: 10 },
-            { name: "bin", value: "45", size: 10 }
-          ]
-        },
-        { name: "pricing", value: "{regular, sale, discount}", nested: true, size: 80,
-          contains: [
-            { name: "regular", value: "29.99", size: 14 },
-            { name: "sale", value: "24.99", size: 12 },
-            { name: "discount", value: "{percent, validUntil}", nested: true, size: 45,
-              contains: [
-                { name: "percent", value: "15", size: 12 },
-                { name: "validUntil", value: "2023-12-31", size: 25 }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    { type: "03 (document)", name: "props", length: "14", value: "{edge: 2, face: 3}", nested: true, size: 20 },
-    { type: "04 (array)", name: "coords", length: "16", value: "[2.2, 5.1]", nested: true, size: 22 }
-  ];
-
-  // Predefined search paths with more options showing nested values
-  const searchPaths = {
-    'color': [0, 1],
-    'shape': [0, 1, 2, 3],
-    'metadata.department.manager.name': [0, 1, 2, 3, 4], // Will expand to show nested doc traversal
-    'inventory.pricing.discount.percent': [0, 1, 2, 3, 4, 5], // Will expand to show nested doc traversal
-    'props.face': [0, 1, 2, 3, 4, 5, 6],
-    'coords.1': [0, 1, 2, 3, 4, 5, 6, 7]
-  };
-
-  // Walkthrough steps configuration
-  const walkthroughSteps = [
-    {
-      target: 'json-document',
-      title: 'MongoDB Document',
-      content: 'This is a sample MongoDB document. Notice how it contains nested fields and different data types.',
-      placement: 'right'
-    },
-    {
-      target: 'search-buttons',
-      title: 'Field Selection',
-      content: 'Click any of these buttons to search for a specific field. Try both simple fields like "color" and nested fields like "metadata.department.manager.name".',
-      placement: 'right'
-    },
-    {
-      target: 'next-step-button',
-      title: 'Step Through Search',
-      content: 'Click this button to see how MongoDB traverses the document structure, examining or skipping fields based on the length information.',
-      placement: 'top'
-    },
-    {
-      target: 'performance-analysis',
-      title: 'Performance Analysis',
-      content: 'Watch how MongoDB can skip entire nested documents when they are not relevant to your search, making queries more efficient.',
-      placement: 'left'
-    },
-    {
-      target: 'bson-table',
-      title: 'BSON Structure',
-      content: 'This table shows how MongoDB stores your document in BSON format, with type, name, length, and value information for each field.',
-      placement: 'left'
     }
-  ];
+  }
+])
+\`\`\`
 
-  // Function to start walkthrough
-  const startWalkthrough = () => {
-    setWalkthrough({
-      active: true,
-      step: 0
-    });
-    // Reset demo state
-    setSearchField('color');
-    setSearchStep(0);
-    setShowSizeStats(true);
-  };
+In this example, the vector search will only return results where:
+1. The document's "metadata.category" field equals "electronics" AND
+2. The document's "metadata.inStock" field is true
 
-  // Function to handle walkthrough navigation
-  const handleWalkthroughStep = (direction) => {
-    if (direction === 'next' && walkthrough.step < walkthroughSteps.length - 1) {
-      setWalkthrough({
-        ...walkthrough,
-        step: walkthrough.step + 1
-      });
-    } else if (direction === 'prev' && walkthrough.step > 0) {
-      setWalkthrough({
-        ...walkthrough,
-        step: walkthrough.step - 1
-      });
-    } else if (direction === 'next') {
-      // End walkthrough
-      setWalkthrough({
-        active: false,
-        step: 0
-      });
-    }
-  };
+You can use any valid MongoDB query operators in your filter, including:
+- Comparison operators ($gt, $lt, $in, etc.)
+- Logical operators ($and, $or, $not, etc.)
+- Array operators ($all, $elemMatch, etc.)
 
-  // Walkthrough tooltip content
-  const WalkthroughTooltip = ({ step }) => (
-    <Paper sx={{ 
-      p: 2, 
-      maxWidth: 300,
-      backgroundColor: mongoColors.white,
-      border: `1px solid ${mongoColors.lightGreen}`
-    }}>
-      <h3 style={{ color: mongoColors.darkGreen, marginBottom: '0.5rem', fontWeight: 600 }}>
-        {walkthroughSteps[step].title}
-      </h3>
-      <p style={{ marginBottom: '1rem', fontSize: '0.875rem' }}>
-        {walkthroughSteps[step].content}
-      </p>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Button 
-          size="small"
-          disabled={step === 0}
-          onClick={() => handleWalkthroughStep('prev')}
-          style={{ 
-            color: step === 0 ? mongoColors.textMedium : mongoColors.blueGreen
-          }}
-        >
-          Previous
-        </Button>
-        <Button
-          size="small"
-          variant="contained"
-          onClick={() => handleWalkthroughStep('next')}
-          style={{ 
-            backgroundColor: mongoColors.green,
-            color: mongoColors.darkGreen
-          }}
-        >
-          {step === walkthroughSteps.length - 1 ? 'Finish' : 'Next'}
-        </Button>
-      </div>
-    </Paper>
-  );
+This filtering capability is particularly useful for RAG applications where you might want to constrain results to specific document types, date ranges, or other properties.
 
-  // Calculate bytes "examined" and bytes "skipped" for the current search
-  const getByteStats = () => {
-    const targetField = searchField.split('.')[0]; // Get the top-level field we're looking for
-    let bytesExamined = 0;
-    let bytesSkipped = 0;
-    let totalBytes = bsonFields.reduce((sum, field) => sum + field.size, 0);
+User: What's the best way to chunk technical documentation for a RAG chatbot?
+
+AI: `
+}
+
+// Text chunking methods
+const chunkByDelimiter = (text, delimiter) => {
+  if (!text) return [];
+  return text.split(delimiter).filter(chunk => chunk.trim() !== '');
+};
+
+const chunkByFixedSize = (text, chunkSize, overlap) => {
+  if (!text) return [];
+  const chunks = [];
+  let i = 0;
+  
+  while (i < text.length) {
+    // Get chunk of specified size
+    const chunk = text.slice(i, i + chunkSize);
+    chunks.push(chunk);
+    // Move forward by chunkSize - overlap
+    i += (chunkSize - overlap);
+  }
+  
+  return chunks;
+};
+
+const recursiveChunk = (text, maxSize, overlap) => {
+  if (!text) return [];
+  
+  // If text is already small enough, return it as a single chunk
+  if (text.length <= maxSize) return [text];
+  
+  const chunks = [];
+  let startPos = 0;
+  
+  while (startPos < text.length) {
+    // Calculate end position
+    const endPos = Math.min(startPos + maxSize, text.length);
     
-    // Calculate based on current step
-    for (let i = 0; i < bsonFields.length; i++) {
-      const field = bsonFields[i];
+    // Find a good breaking point (space, period, etc.)
+    let breakPoint = endPos;
+    if (endPos < text.length) {
+      const possibleBreakPoints = [
+        text.lastIndexOf(' ', endPos),
+        text.lastIndexOf('.', endPos),
+        text.lastIndexOf(',', endPos),
+        text.lastIndexOf(';', endPos),
+        text.lastIndexOf('\n', endPos)
+      ].filter(point => point > startPos && point < endPos);
       
-      if (i < Math.floor(searchStep)) {
-        // We've already examined this field
-        if (field.nested && field.name !== targetField) {
-          // If it's a nested document and not our target, we skipped it
-          bytesSkipped += field.size;
-        } else {
-          // Otherwise we examined it
-          bytesExamined += field.size;
-        }
-      } else if (i === Math.floor(searchStep)) {
-        // We're currently examining this field
-        bytesExamined += field.size;
-      } else if (i > Math.floor(searchStep)) {
-        // We haven't reached this field yet
-        if (field.name === targetField) {
-          // This is our target field, we'll examine it later
-          continue;
-        } else {
-          // We'll skip this field entirely
-          bytesSkipped += field.size;
-        }
+      if (possibleBreakPoints.length > 0) {
+        breakPoint = Math.max(...possibleBreakPoints) + 1;
       }
     }
     
-    return {
-      examined: bytesExamined,
-      skipped: bytesSkipped,
-      total: totalBytes,
-      percentSkipped: Math.round((bytesSkipped / totalBytes) * 100)
-    };
-  };
-
-  // Get appropriate message for the current search step
-  const getStepMessage = () => {
-    if (searchStep === 0) {
-      return "Starting at beginning of document...";
-    }
+    // Add the chunk
+    chunks.push(text.slice(startPos, breakPoint));
     
-    const stepIndex = Math.floor(searchStep);
-    if (stepIndex >= bsonFields.length) {
-      return "Reached end of document. Field not found.";
-    }
-    
-    const field = bsonFields[stepIndex];
-    const targetParts = searchField.split('.');
-    
-    if (field.name === targetParts[0]) {
-      // Found the top-level field we're looking for
-      if (targetParts.length === 1) {
-        return `Found "${field.name}" field! Returning value: "${field.value}"`;
-      } else {
-        // Need to look deeper
-        return `Found "${field.name}" field. It's a nested document of length ${field.length} bytes. Looking inside for ${targetParts.slice(1).join('.')}...`;
-      }
-    } else if (field.nested && searchStep > stepIndex && !searchField.startsWith(field.name)) {
-      // We're going to skip a nested document
-      return `Skipping entire "${field.name}" object (${field.length} bytes) using length information!`;
+    // Move start position for next chunk (with overlap)
+    // Ensure we're not stuck in an infinite loop by checking if we're making progress
+    const newStartPos = Math.max(startPos, breakPoint - overlap);
+    if (newStartPos <= startPos) {
+      // If we're not making progress, force advancement to prevent infinite loop
+      startPos = Math.min(startPos + 1, text.length);
     } else {
-      // Just examining a field that's not what we're looking for
-      return `Checking "${field.name}" field - not our target "${targetParts[0]}". Moving on...`;
+      startPos = newStartPos;
+    }
+  }
+  
+  return chunks;
+};
+
+// Simulated semantic chunking (in a real application, this would use embeddings or NLP)
+const semanticChunk = (text) => {
+  if (!text) return [];
+  
+  // First split into sentences
+  const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+  
+  // Then group sentences into semantic chunks
+  const chunks = [];
+  let currentChunk = '';
+  
+  sentences.forEach(sentence => {
+    // In a real implementation, we would check semantic similarity here
+    // For now, just use length as a heuristic
+    if (currentChunk.length + sentence.length > 100) {
+      chunks.push(currentChunk);
+      currentChunk = sentence;
+    } else {
+      currentChunk += sentence;
+    }
+  });
+  
+  if (currentChunk) {
+    chunks.push(currentChunk);
+  }
+  
+  return chunks;
+};
+
+// Helper function for document structure analysis (for recommended chunking strategy)
+const analyzeDocumentStructure = (text) => {
+  // This is a simplified analysis - in reality, this would be more sophisticated
+  const paragraphCount = (text.match(/\n\n/g) || []).length + 1;
+  const sentenceCount = (text.match(/[.!?]+/g) || []).length;
+  const headingCount = (text.match(/^#+\s+.+$/gm) || []).length;
+  const listItemCount = (text.match(/^[-*]\s+.+$/gm) || []).length;
+  
+  const avgParagraphLength = text.length / paragraphCount;
+  const avgSentenceLength = text.length / sentenceCount;
+  
+  let docType = "general";
+  let recommendedStrategy = "recursive";
+  
+  if (headingCount > 0 && paragraphCount / headingCount < 3) {
+    docType = "structured";
+    recommendedStrategy = "semantic";
+  } else if (listItemCount > paragraphCount * 0.5) {
+    docType = "list-heavy";
+    recommendedStrategy = "delimiter";
+  } else if (avgSentenceLength > 200) {
+    docType = "long-form";
+    recommendedStrategy = "fixed";
+  } else if (avgParagraphLength < 100) {
+    docType = "concise";
+    recommendedStrategy = "semantic";
+  }
+  
+  return {
+    docType,
+    recommendedStrategy,
+    stats: {
+      paragraphCount,
+      sentenceCount,
+      headingCount,
+      listItemCount,
+      avgParagraphLength,
+      avgSentenceLength
     }
   };
+};
 
-  // Start a search for a specific field
-  const startFieldSearch = (field) => {
-    // Reset all state when starting a new search
-    setSearchField(field);
-    setSearchStep(0);
-    setIsAnimating(false);
+// Random colors for chunks, using MongoDB color palette
+const chunkColors = [
+  mongoColors.mint,
+  mongoColors.lightGreen,
+  "#ADD8E6", // Light blue
+  "#FFD700", // Light yellow
+  "#FFA07A", // Light salmon
+  "#98FB98", // Pale green
+  "#D8BFD8", // Thistle
+  "#FFDAB9", // Peach puff
+  "#D3D3D3", // Light gray
+  "#AFEEEE", // Pale turquoise
+  "#FFB6C1", // Light pink
+  "#FFFACD"  // Lemon chiffon
+];
+
+// Helper function to generate "embeddings" (simplified for visualization)
+const generateEmbedding = (text) => {
+  // In a real system, this would call an embedding model
+  // For demo purposes, we'll just create a simplified vector
+  
+  // Calculate a simple hash for visualization purposes
+  let hash = 0;
+  for (let i = 0; i < text.length; i++) {
+    hash = ((hash << 5) - hash) + text.charCodeAt(i);
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  
+  // Create a 2D point based on the hash
+  // This is just for visualization - real embeddings would be high-dimensional
+  const x = (Math.abs(hash) % 1000) / 1000; // Between 0 and 1
+  const y = (Math.abs(hash / 1000) % 1000) / 1000; // Between 0 and 1
+  
+  return { x: x * 90 + 5, y: y * 90 + 5 }; // Scale to fit in our visualization
+};
+
+// Simulated question-document similarity (for retrieval simulation)
+const calculateSimilarity = (question, chunk) => {
+  // In a real system, this would compute cosine similarity between embeddings
+  // For this demo, we'll use a simplified approach based on word overlap
+  
+  const questionWords = new Set(question.toLowerCase().split(/\W+/).filter(w => w.length > 2));
+  const chunkWords = new Set(chunk.toLowerCase().split(/\W+/).filter(w => w.length > 2));
+  
+  let commonWords = 0;
+  for (const word of questionWords) {
+    if (chunkWords.has(word)) {
+      commonWords++;
+    }
+  }
+  
+  // Jaccard similarity + some randomness for demo purposes
+  const similarity = commonWords / (questionWords.size + chunkWords.size - commonWords);
+  return similarity + (Math.random() * 0.1); // Add small random factor for variation
+};
+
+const RAGLifecycleDemo = () => {
+  // State variables
+  const [activeTab, setActiveTab] = useState('chunking'); // 'chunking', 'embedding', 'retrieval', 'generation'
+  const [docType, setDocType] = useState('documentation');
+  const [inputText, setInputText] = useState(sampleTexts.documentation);
+  const [method, setMethod] = useState(0); // 0: None, 1: Delimiter, 2: Fixed, 3: Recursive, 4: Semantic
+  const [delimiter, setDelimiter] = useState('.');
+  const [chunkSize, setChunkSize] = useState(150);
+  const [overlap, setOverlap] = useState(20);
+  const [chunkedText, setChunkedText] = useState([]);
+  const [vectorDocuments, setVectorDocuments] = useState([]);
+  const [recommendedStrategy, setRecommendedStrategy] = useState('');
+  const [docAnalysis, setDocAnalysis] = useState(null);
+  
+  // Chat simulation states
+  const [chatMessages, setChatMessages] = useState([
+    { role: 'user', content: 'How do I create a vector search index in MongoDB Atlas?' }
+  ]);
+  const [userQuery, setUserQuery] = useState('');
+  const [retrievedChunks, setRetrievedChunks] = useState([]);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationStage, setGenerationStage] = useState(0);
+  
+  // Text for method descriptions
+  const methodDescriptions = [
+    "No chunking: The entire text is stored as a single document in the vector database.",
+    "Simple Delimiter: Text is split at specific characters. Simple but may lead to chunks with uneven sizes.",
+    "Fixed Size with Overlap: Creates chunks of fixed size with overlapping sections to maintain context between chunks.",
+    "Recursive with Overlap: Similar to fixed size but attempts to break at natural boundaries like sentences or paragraphs.",
+    "Semantic: Groups text based on meaning and context, keeping related content together."
+  ];
+  
+  // Effect to analyze document and recommend chunking strategy on document type change
+  useEffect(() => {
+    setInputText(sampleTexts[docType] || '');
+    const analysis = analyzeDocumentStructure(sampleTexts[docType] || '');
+    setDocAnalysis(analysis);
+    setRecommendedStrategy(analysis.recommendedStrategy);
     
-    // Reset performance analysis by briefly hiding and showing it
-    setShowSizeStats(false);
-    setTimeout(() => {
-      setShowSizeStats(true);
-    }, 100);
+    // Set the recommended method based on the analysis
+    switch (analysis.recommendedStrategy) {
+      case 'delimiter':
+        setMethod(1);
+        break;
+      case 'fixed':
+        setMethod(2);
+        break;
+      case 'recursive':
+        setMethod(3);
+        break;
+      case 'semantic':
+        setMethod(4);
+        break;
+      default:
+        setMethod(0);
+    }
+  }, [docType]);
+  
+  // Effect to process chunks when needed
+  useEffect(() => {
+    processText();
+  }, [inputText, delimiter, chunkSize, overlap, method]);
+  
+  // Process the text into chunks based on selected method
+  const processText = () => {
+    let chunks = [];
+    
+    switch (method) {
+      case 0: // No chunking
+        chunks = [inputText];
+        break;
+      case 1: // Simple delimiter
+        chunks = chunkByDelimiter(inputText, delimiter);
+        break;
+      case 2: // Fixed token with overlap
+        chunks = chunkByFixedSize(inputText, chunkSize, overlap);
+        break;
+      case 3: // Recursive with overlap
+        chunks = recursiveChunk(inputText, chunkSize, overlap);
+        break;
+      case 4: // Semantic
+        chunks = semanticChunk(inputText);
+        break;
+      default:
+        chunks = [inputText];
+    }
+    
+    setChunkedText(chunks);
+    
+    // Generate "embeddings" for each chunk
+    const newEmbeddings = chunks.map(chunk => generateEmbedding(chunk));
+    
+    // Create vector documents
+    const newVectorDocs = chunks.map((chunk, index) => ({
+      id: `doc_${index + 1}`,
+      text: chunk,
+      embedding: newEmbeddings[index],
+      color: chunkColors[index % chunkColors.length],
+      metadata: {
+        source: docType,
+        chunkMethod: ['none', 'delimiter', 'fixed', 'recursive', 'semantic'][method],
+        chunkIndex: index,
+        chunkTotal: chunks.length,
+        charCount: chunk.length
+      }
+    }));
+    
+    setVectorDocuments(newVectorDocs);
   };
   
-  // Advance to the next step in the search
-  const nextStep = () => {
-    if (searchStep >= Math.max(...searchPaths[searchField])) {
-      // Reset when we reach the end
-      setSearchStep(0);
-    } else {
-      // Find the next step in the search path
-      const currentIndex = searchPaths[searchField].indexOf(searchStep);
-      if (currentIndex >= 0 && currentIndex < searchPaths[searchField].length - 1) {
-        setSearchStep(searchPaths[searchField][currentIndex + 1]);
-      } else {
-        // Just increment if not found in the path
-        setSearchStep(searchStep + 1);
-      }
+  // Options for the delimiter method
+  const renderChunkingOptions = () => {
+    if (method === 1) { // Simple delimiter
+      return (
+        <div className="mb-4">
+          <label style={{ color: mongoColors.darkGreen, display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
+            Delimiter
+          </label>
+          <select
+            value={delimiter}
+            onChange={(e) => setDelimiter(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '0.5rem',
+              borderRadius: '0.25rem',
+              border: `1px solid ${mongoColors.mint}`,
+              backgroundColor: mongoColors.white,
+              color: mongoColors.darkGreen
+            }}
+          >
+            <option value=".">Period (.)</option>
+            <option value=" ">Space ( )</option>
+            <option value=",">Comma (,)</option>
+            <option value="\n">New Line</option>
+            <option value="\n\n">Paragraph Break</option>
+          </select>
+        </div>
+      );
+    } else if (method === 2 || method === 3) { // Fixed token or Recursive
+      return (
+        <div className="space-y-4">
+          <div>
+            <label style={{ color: mongoColors.darkGreen, display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
+              Chunk Size: {chunkSize} characters
+            </label>
+            <input
+              type="range"
+              value={chunkSize}
+              onChange={(e) => setChunkSize(parseInt(e.target.value))}
+              min={50}
+              max={500}
+              step={10}
+              style={{ width: '100%' }}
+            />
+          </div>
+          <div>
+            <label style={{ color: mongoColors.darkGreen, display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
+              Overlap: {overlap} characters
+            </label>
+            <input
+              type="range"
+              value={overlap}
+              onChange={(e) => setOverlap(parseInt(e.target.value))}
+              min={0}
+              max={Math.min(50, chunkSize / 2)}
+              style={{ width: '100%' }}
+            />
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+  
+  // Simulate chunk retrieval based on query
+  const simulateRetrieval = (query) => {
+    if (!query || vectorDocuments.length === 0) {
+      setRetrievedChunks([]);
+      return;
+    }
+    
+    // Calculate similarity between query and each chunk
+    const chunksWithScores = vectorDocuments.map(doc => ({
+      ...doc,
+      similarity: calculateSimilarity(query, doc.text)
+    }));
+    
+    // Sort by similarity score
+    const sortedChunks = [...chunksWithScores].sort((a, b) => b.similarity - a.similarity);
+    
+    // Take top 3 chunks
+    const topChunks = sortedChunks.slice(0, 3);
+    setRetrievedChunks(topChunks);
+    
+    return topChunks;
+  };
+  
+  // Simulate chat response generation
+  const simulateResponseGeneration = () => {
+    if (userQuery.trim() === '') return;
+    
+    // Add user message
+    setChatMessages(prevMessages => [
+      ...prevMessages,
+      { role: 'user', content: userQuery }
+    ]);
+    
+    // Simulate retrieval
+    const retrievedDocs = simulateRetrieval(userQuery);
+    setIsGenerating(true);
+    setGenerationStage(1); // Retrieval stage
+    
+    // Simulate thinking time for retrieval
+    setTimeout(() => {
+      setGenerationStage(2); // Generation stage
+      
+      // Simulate thinking time for generation
+      setTimeout(() => {
+        // Generate a response based on retrieved chunks
+        const response = generateDummyResponse(userQuery, retrievedDocs);
+        
+        // Add AI response
+        setChatMessages(prevMessages => [
+          ...prevMessages,
+          { role: 'assistant', content: response }
+        ]);
+        
+        setIsGenerating(false);
+        setGenerationStage(0);
+        setUserQuery('');
+      }, 1500);
+    }, 1000);
+  };
+  
+  // Generate a dummy response based on retrieved chunks
+  const generateDummyResponse = (query, chunks) => {
+    if (!chunks || chunks.length === 0) {
+      return "I don't have enough information to answer that question.";
+    }
+    
+    // For the demo, we'll just return a predefined response if the query matches
+    if (query.toLowerCase().includes('vector search index') || 
+        query.toLowerCase().includes('create index')) {
+      return sampleTexts.conversation.split("User: How do I create a vector search index in MongoDB Atlas?")[1]
+        .split("User:")[0].trim();
+    }
+    
+    if (query.toLowerCase().includes('filter') || 
+        query.toLowerCase().includes('metadata')) {
+      return sampleTexts.conversation.split("User: Can I filter my vector search results based on metadata fields?")[1]
+        .split("User:")[0].trim();
+    }
+    
+    // Fallback response
+    return `To answer your question about "${query}", I'd consider these key points from the documentation:\n\n` +
+      chunks.map((chunk, i) => `${i+1}. ${chunk.text.substring(0, 80)}...`).join('\n\n');
+  };
+  
+  // Render the current tab content
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'chunking':
+        return renderChunkingTab();
+      case 'embedding':
+        return renderEmbeddingTab();
+      case 'retrieval':
+        return renderRetrievalTab();
+      case 'generation':
+        return renderGenerationTab();
+      default:
+        return renderChunkingTab();
     }
   };
-
-  // Add a window resize listener
-  useEffect(() => {
-    const handleResize = () => {
-      // Force a re-render when window size changes
-      setWalkthrough(prev => ({...prev}));
-    };
-    
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
+  
+  // Chunking tab content
+  const renderChunkingTab = () => {
+    return (
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        {/* Left column */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {/* Document type selection */}
+          <div style={{ 
+            backgroundColor: mongoColors.white,
+            borderRadius: '0.375rem',
+            padding: '1rem',
+            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+          }}>
+            <h2 style={{ 
+              fontSize: '1rem', 
+              fontWeight: '600', 
+              marginBottom: '0.75rem',
+              color: mongoColors.darkGreen
+            }}>
+              Document Type
+            </h2>
+            
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+              {Object.keys(sampleTexts).map((type) => (
+                <button
+                  key={type}
+                  onClick={() => setDocType(type)}
+                  style={{
+                    padding: '0.5rem 0.75rem',
+                    borderRadius: '0.25rem',
+                    border: 'none',
+                    backgroundColor: docType === type ? mongoColors.green : mongoColors.mint,
+                    color: docType === type ? mongoColors.darkGreen : mongoColors.blueGreen,
+                    fontWeight: docType === type ? '600' : '400',
+                    cursor: 'pointer',
+                    fontSize: '0.875rem'
+                  }}
+                >
+                  {type.charAt(0).toUpperCase() + type.slice(1)}
+                </button>
+              ))}
+            </div>
+            
+            {docAnalysis && (
+              <div style={{ 
+                padding: '0.75rem',
+                backgroundColor: mongoColors.lightGreen,
+                borderRadius: '0.25rem',
+                fontSize: '0.875rem',
+                color: mongoColors.darkGreen
+              }}>
+                <div style={{ marginBottom: '0.5rem', fontWeight: '600' }}>Document Analysis:</div>
+                <ul style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>
+                  <li>Type: {docAnalysis.docType}</li>
+                  <li>Paragraphs: {docAnalysis.stats.paragraphCount}</li>
+                  <li>Sentences: {docAnalysis.stats.sentenceCount}</li>
+                  <li>Headings: {docAnalysis.stats.headingCount}</li>
+                </ul>
+                <div style={{ 
+                  marginTop: '0.5rem', 
+                  fontWeight: '600', 
+                  color: mongoColors.blueGreen 
+                }}>
+                  Recommended strategy: {docAnalysis.recommendedStrategy}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Input text */}
+          <div style={{ 
+            backgroundColor: mongoColors.white,
+            borderRadius: '0.375rem',
+            padding: '1rem',
+            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+          }}>
+            <h2 style={{ 
+              fontSize: '1rem', 
+              fontWeight: '600', 
+              marginBottom: '0.75rem',
+              color: mongoColors.darkGreen
+            }}>
+              Input Text
+            </h2>
+            <textarea
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              style={{
+                width: '100%',
+                minHeight: '200px',
+                padding: '0.5rem',
+                borderRadius: '0.25rem',
+                border: `1px solid ${mongoColors.mint}`,
+                marginBottom: '0.5rem',
+                resize: 'vertical',
+                color: mongoColors.darkGreen,
+                fontFamily: 'inherit'
+              }}
+            />
+          </div>
+        </div>
+        
+        {/* Right column */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {/* Chunking method selection */}
+          <div style={{ 
+            backgroundColor: mongoColors.white,
+            borderRadius: '0.375rem',
+            padding: '1rem',
+            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+          }}>
+            <h2 style={{ 
+              fontSize: '1rem', 
+              fontWeight: '600', 
+              marginBottom: '0.75rem',
+              color: mongoColors.darkGreen
+            }}>
+              Chunking Method
+            </h2>
+            
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+              {['No Chunking', 'Delimiter', 'Fixed w/ Overlap', 'Recursive', 'Semantic'].map((name, index) => (
+                <button
+                  key={index}
+                  onClick={() => setMethod(index)}
+                  style={{
+                    padding: '0.5rem 0.75rem',
+                    borderRadius: '0.25rem',
+                    border: 'none',
+                    backgroundColor: method === index ? mongoColors.green : mongoColors.mint,
+                    color: method === index ? mongoColors.darkGreen : mongoColors.blueGreen,
+                    fontWeight: method === index ? '600' : '400',
+                    cursor: 'pointer',
+                    fontSize: '0.875rem'
+                  }}
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
+            
+            {/* Method description */}
+            <div style={{ 
+              padding: '0.75rem',
+              backgroundColor: mongoColors.lightGreen,
+              borderRadius: '0.25rem',
+              fontSize: '0.875rem',
+              color: mongoColors.darkGreen,
+              marginBottom: '1rem'
+            }}>
+              {methodDescriptions[method]}
+            </div>
+            
+            {/* Method-specific options */}
+            {renderChunkingOptions()}
+          </div>
+          
+          {/* Chunked output visualization */}
+          <div style={{ 
+            backgroundColor: mongoColors.white,
+            borderRadius: '0.375rem',
+            padding: '1rem',
+            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
+            overflowY: 'auto',
+            maxHeight: '350px',
+            flexGrow: 1
+          }}>
+            <h2 style={{ 
+              fontSize: '1rem', 
+              fontWeight: '600', 
+              marginBottom: '0.75rem',
+              color: mongoColors.darkGreen
+            }}>
+              {method === 0 ? 'Document (No Chunking)' : `Chunked Text (${chunkedText.length} chunks)`}
+            </h2>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {chunkedText.map((chunk, index) => (
+                <div 
+                  key={index}
+                  style={{
+                    padding: '0.75rem',
+                    borderRadius: '0.25rem',
+                    backgroundColor: vectorDocuments[index]?.color || mongoColors.mint,
+                    fontSize: '0.875rem',
+                    color: mongoColors.darkGreen,
+                    border: `1px solid ${mongoColors.mint}`,
+                    position: 'relative'
+                  }}
+                >
+                  <div style={{ 
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginBottom: '0.5rem'
+                  }}>
+                    <span style={{ 
+                      backgroundColor: mongoColors.green,
+                      color: mongoColors.darkGreen,
+                      padding: '0.125rem 0.375rem',
+                      borderRadius: '1rem',
+                      fontSize: '0.75rem',
+                      fontWeight: '600'
+                    }}>
+                      {method === 0 ? 'Entire Document' : `Chunk #${index + 1}`}
+                    </span>
+                    <span style={{ 
+                      fontSize: '0.75rem', 
+                      color: mongoColors.blueGreen,
+                      fontWeight: '500'
+                    }}>
+                      {chunk.length} chars
+                    </span>
+                  </div>
+                  <div style={{ 
+                    paddingTop: '0.25rem',
+                    wordBreak: 'break-word',
+                    whiteSpace: 'pre-wrap',
+                    overflowWrap: 'break-word',
+                    maxHeight: method === 0 ? '250px' : 'auto',
+                    overflowY: method === 0 ? 'auto' : 'visible'
+                  }}>
+                    {chunk}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+  
+  // Embedding tab content
+  const renderEmbeddingTab = () => {
+    return (
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        {/* Left column - Vector space visualization */}
+        <div style={{ 
+          backgroundColor: mongoColors.white,
+          borderRadius: '0.375rem',
+          padding: '1rem',
+          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
+          <h2 style={{ 
+            fontSize: '1rem', 
+            fontWeight: '600', 
+            marginBottom: '0.75rem',
+            color: mongoColors.darkGreen,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <span>Vector Space Visualization</span>
+            <span style={{ 
+              fontSize: '0.75rem', 
+              fontWeight: 'normal', 
+              color: mongoColors.textMedium 
+            }}>
+              (Simplified 2D representation)
+            </span>
+          </h2>
+          
+          <div style={{
+            position: 'relative',
+            backgroundColor: mongoColors.lightGreen,
+            border: `1px solid ${mongoColors.mint}`,
+            height: '350px',
+            borderRadius: '0.25rem',
+            marginBottom: '1rem',
+            flexGrow: 1
+          }}>
+            {/* Coordinate axes */}
+            <div style={{
+              position: 'absolute',
+              left: '50%',
+              top: 0,
+              bottom: 0,
+              width: '1px',
+              backgroundColor: `${mongoColors.textMedium}40`
+            }}></div>
+            <div style={{
+              position: 'absolute',
+              top: '50%',
+              left: 0,
+              right: 0,
+              height: '1px',
+              backgroundColor: `${mongoColors.textMedium}40`
+            }}></div>
+            
+            {/* Embedding points */}
+            {vectorDocuments.map((doc, index) => (
+              <div
+                key={index}
+                style={{
+                  position: 'absolute',
+                  width: '2.5rem',
+                  height: '2.5rem',
+                  borderRadius: '50%',
+                  backgroundColor: doc.color,
+                  border: `2px solid ${mongoColors.darkGreen}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '0.875rem',
+                  fontWeight: 'bold',
+                  color: mongoColors.darkGreen,
+                  left: `${doc.embedding.x}%`,
+                  top: `${doc.embedding.y}%`,
+                  transform: 'translate(-50%, -50%)',
+                  zIndex: 5,
+                  cursor: 'default',
+                  transition: 'all 0.3s ease-in-out'
+                }}
+                title={`Chunk ${index + 1}: ${doc.text.length > 30 ? doc.text.substring(0, 27) + '...' : doc.text}`}
+              >
+                {index + 1}
+              </div>
+            ))}
+          </div>
+          
+          <div style={{
+            padding: '0.75rem',
+            backgroundColor: mongoColors.mint,
+            borderRadius: '0.25rem',
+            fontSize: '0.875rem',
+            color: mongoColors.darkGreen
+          }}>
+            <p><strong>Note:</strong> In a real vector database, embeddings are high-dimensional vectors (768-1536 dimensions).</p>
+            <p style={{ marginTop: '0.5rem' }}>Each point represents a document chunk in the semantic space, where similar meanings cluster together.</p>
+          </div>
+        </div>
+        
+        {/* Right column - Vector documents */}
+        <div style={{ 
+          backgroundColor: mongoColors.white,
+          borderRadius: '0.375rem',
+          padding: '1rem',
+          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
+          overflowY: 'auto',
+          maxHeight: 'calc(100vh - 235px)'
+        }}>
+          <h2 style={{ 
+            fontSize: '1rem', 
+            fontWeight: '600', 
+            marginBottom: '0.75rem',
+            color: mongoColors.darkGreen
+          }}>
+            Vector Database Documents ({vectorDocuments.length})
+          </h2>
+          
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.75rem'
+          }}>
+            {vectorDocuments.map((doc, index) => (
+              <div
+                key={index}
+                style={{
+                  padding: '0.75rem',
+                  borderRadius: '0.25rem',
+                  backgroundColor: mongoColors.lightGreen,
+                  border: `1px solid ${doc.color}`,
+                  borderLeft: `4px solid ${doc.color}`,
+                  fontSize: '0.875rem'
+                }}
+              >
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  marginBottom: '0.5rem',
+                  alignItems: 'center'
+                }}>
+                  <div style={{
+                    fontWeight: '600',
+                    color: mongoColors.darkGreen,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}>
+                    <span style={{
+                      width: '1.25rem',
+                      height: '1.25rem',
+                      borderRadius: '50%',
+                      backgroundColor: doc.color,
+                      border: `1px solid ${mongoColors.darkGreen}`,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '0.75rem',
+                      fontWeight: 'bold'
+                    }}>
+                      {index + 1}
+                    </span>
+                    Document {doc.id}
+                  </div>
+                  <div style={{
+                    fontSize: '0.75rem',
+                    color: mongoColors.textMedium
+                  }}>
+                    {doc.text.length} chars
+                  </div>
+                </div>
+                
+                {/* Document text */}
+                <div style={{
+                  padding: '0.5rem',
+                  backgroundColor: doc.color,
+                  borderRadius: '0.25rem',
+                  color: mongoColors.darkGreen,
+                  wordBreak: 'break-word',
+                  whiteSpace: 'pre-wrap',
+                  overflowWrap: 'break-word',
+                  fontSize: '0.8rem',
+                  maxHeight: '80px',
+                  overflowY: 'auto',
+                  marginBottom: '0.5rem'
+                }}>
+                  {doc.text.length > 100 ? `${doc.text.substring(0, 97)}...` : doc.text}
+                </div>
+                
+                {/* Metadata */}
+                <div style={{
+                  marginBottom: '0.5rem',
+                  fontSize: '0.75rem',
+                  color: mongoColors.blueGreen
+                }}>
+                  <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>Metadata:</div>
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '0.25rem'
+                  }}>
+                    <span>Source: {doc.metadata.source}</span>
+                    <span>Method: {doc.metadata.chunkMethod}</span>
+                    <span>Index: {doc.metadata.chunkIndex + 1}/{doc.metadata.chunkTotal}</span>
+                    <span>Size: {doc.metadata.charCount} chars</span>
+                  </div>
+                </div>
+                
+                {/* Embedding vector */}
+                <div style={{
+                  padding: '0.25rem 0.5rem',
+                  backgroundColor: mongoColors.darkGreen,
+                  borderRadius: '0.25rem',
+                  color: mongoColors.textLight,
+                  fontSize: '0.75rem',
+                  fontFamily: 'monospace'
+                }}>
+                  embedding: [{doc.embedding.x.toFixed(2)}, {doc.embedding.y.toFixed(2)}, ... 1534 more dimensions]
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+  
+  // Retrieval tab content
+  const renderRetrievalTab = () => {
+    return (
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        {/* Left column - Search query and results */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {/* Search query input */}
+          <div style={{ 
+            backgroundColor: mongoColors.white,
+            borderRadius: '0.375rem',
+            padding: '1rem',
+            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+          }}>
+            <h2 style={{ 
+              fontSize: '1rem', 
+              fontWeight: '600', 
+              marginBottom: '0.75rem',
+              color: mongoColors.darkGreen
+            }}>
+              Semantic Search
+            </h2>
+            
+            <div style={{ marginBottom: '1rem' }}>
+              <input
+                type="text"
+                value={userQuery}
+                onChange={(e) => setUserQuery(e.target.value)}
+                placeholder="Ask a question about MongoDB..."
+                onKeyDown={(e) => e.key === 'Enter' && simulateRetrieval(userQuery)}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  borderRadius: '0.25rem',
+                  border: `1px solid ${mongoColors.mint}`,
+                  fontSize: '0.875rem',
+                  color: mongoColors.darkGreen
+                }}
+              />
+            </div>
+            
+            <button
+              onClick={() => simulateRetrieval(userQuery)}
+              style={{
+                width: '100%',
+                padding: '0.75rem',
+                backgroundColor: mongoColors.green,
+                color: mongoColors.darkGreen,
+                border: 'none',
+                borderRadius: '0.25rem',
+                fontWeight: '600',
+                cursor: 'pointer'
+              }}
+            >
+              Search Vector Database
+            </button>
+          </div>
+          
+          {/* MongoDB Query Visualization */}
+          <div style={{ 
+            backgroundColor: mongoColors.darkGreen, 
+            padding: '0.75rem 1rem',
+            color: mongoColors.white,
+            fontSize: '0.875rem',
+            borderRadius: '0.375rem',
+            border: `1px solid ${mongoColors.green}`
+          }}>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '0.5rem'
+            }}>
+              <div style={{ fontWeight: '600', color: mongoColors.green }}>MongoDB Vector Search Query:</div>
+              <div style={{ 
+                fontSize: '0.75rem', 
+                color: mongoColors.textMedium 
+              }}>
+                Vector Similarity Search
+              </div>
+            </div>
+            <div style={{
+              backgroundColor: mongoColors.blueGreen,
+              padding: '0.75rem',
+              borderRadius: '0.25rem',
+              fontFamily: 'monospace',
+              fontSize: '0.8rem',
+              color: mongoColors.white,
+              overflowX: 'auto'
+            }}>
+{`db.documents.aggregate([
+  {
+    $vectorSearch: {
+      index: "content_embedding",
+      queryVector: [0.156, -0.342, 0.789, ...], // From user query
+      path: "embedding",
+      numCandidates: 100,
+      limit: 3,
+      filter: { "metadata.source": "${docType}" }
+    }
+  },
+  {
+    $project: {
+      _id: 1,
+      text: 1,
+      metadata: 1,
+      score: { $meta: "vectorSearchScore" }
+    }
+  }
+])`}
+            </div>
+          </div>
+          
+          {/* Vector retrieval metrics */}
+          <div style={{ 
+            backgroundColor: mongoColors.white,
+            borderRadius: '0.375rem',
+            padding: '1rem',
+            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+          }}>
+            <h2 style={{ 
+              fontSize: '1rem', 
+              fontWeight: '600', 
+              marginBottom: '0.75rem',
+              color: mongoColors.darkGreen
+            }}>
+              Retrieval Metrics
+            </h2>
+            
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: '1fr 1fr', 
+              gap: '1rem',
+              marginBottom: '1rem'
+            }}>
+              <div style={{
+                padding: '0.75rem',
+                backgroundColor: mongoColors.lightGreen,
+                borderRadius: '0.25rem',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '0.75rem', color: mongoColors.textMedium, marginBottom: '0.25rem' }}>
+                  Database Size
+                </div>
+                <div style={{ fontSize: '1.25rem', fontWeight: '600', color: mongoColors.blueGreen }}>
+                  {vectorDocuments.length} chunks
+                </div>
+              </div>
+              <div style={{
+                padding: '0.75rem',
+                backgroundColor: mongoColors.lightGreen,
+                borderRadius: '0.25rem',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '0.75rem', color: mongoColors.textMedium, marginBottom: '0.25rem' }}>
+                  Results Retrieved
+                </div>
+                <div style={{ fontSize: '1.25rem', fontWeight: '600', color: mongoColors.blueGreen }}>
+                  {retrievedChunks.length} chunks
+                </div>
+              </div>
+            </div>
+            
+            <div style={{
+              padding: '0.75rem',
+              backgroundColor: mongoColors.mint,
+              borderRadius: '0.25rem',
+              fontSize: '0.875rem',
+              color: mongoColors.darkGreen
+            }}>
+              <strong>Chunking Impact:</strong> Notice how the chunking strategy affects the quality and relevance 
+              of retrieved results. Smaller chunks with semantic boundaries typically yield more precise results.
+            </div>
+          </div>
+        </div>
+        
+        {/* Right column - Retrieved chunks */}
+        <div style={{ 
+          backgroundColor: mongoColors.white,
+          borderRadius: '0.375rem',
+          padding: '1rem',
+          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
+          overflowY: 'auto',
+          maxHeight: 'calc(100vh - 235px)'
+        }}>
+          <h2 style={{ 
+            fontSize: '1rem', 
+            fontWeight: '600', 
+            marginBottom: '0.75rem',
+            color: mongoColors.darkGreen
+          }}>
+            Retrieved Chunks
+          </h2>
+          
+          {retrievedChunks.length > 0 ? (
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem'
+            }}>
+              {retrievedChunks.map((chunk, index) => (
+                <div
+                  key={index}
+                  style={{
+                    padding: '0.75rem',
+                    borderRadius: '0.25rem',
+                    backgroundColor: mongoColors.lightGreen,
+                    border: `1px solid ${chunk.color}`,
+                    borderLeft: `4px solid ${chunk.color}`,
+                    fontSize: '0.875rem'
+                  }}
+                >
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginBottom: '0.5rem',
+                    alignItems: 'center'
+                  }}>
+                    <div style={{
+                      fontWeight: '600',
+                      color: mongoColors.darkGreen,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}>
+                      <span style={{
+                        backgroundColor: mongoColors.green,
+                        color: mongoColors.darkGreen,
+                        padding: '0.125rem 0.375rem',
+                        borderRadius: '1rem',
+                        fontSize: '0.75rem',
+                        fontWeight: '600'
+                      }}>
+                        Result #{index + 1}
+                      </span>
+                      <span>(Chunk {chunk.metadata.chunkIndex + 1})</span>
+                    </div>
+                    <div style={{
+                      fontSize: '0.75rem',
+                      color: mongoColors.blueGreen,
+                      fontWeight: '600'
+                    }}>
+                      Similarity: {(chunk.similarity * 100).toFixed(1)}%
+                    </div>
+                  </div>
+                  
+                  {/* Document text */}
+                  <div style={{
+                    padding: '0.75rem',
+                    backgroundColor: chunk.color,
+                    borderRadius: '0.25rem',
+                    color: mongoColors.darkGreen,
+                    wordBreak: 'break-word',
+                    whiteSpace: 'pre-wrap',
+                    overflowWrap: 'break-word',
+                    fontSize: '0.875rem',
+                    marginBottom: '0.5rem'
+                  }}>
+                    {chunk.text}
+                  </div>
+                  
+                  {/* Metadata */}
+                  <div style={{
+                    fontSize: '0.75rem',
+                    color: mongoColors.textMedium,
+                    display: 'flex',
+                    justifyContent: 'space-between'
+                  }}>
+                    <span>Source: {chunk.metadata.source}</span>
+                    <span>Chunk Method: {chunk.metadata.chunkMethod}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{
+              padding: '2rem',
+              textAlign: 'center',
+              color: mongoColors.textMedium,
+              backgroundColor: mongoColors.lightGreen,
+              borderRadius: '0.25rem',
+              fontSize: '0.875rem'
+            }}>
+              Enter a search query to retrieve relevant chunks
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+  
+  // Generation tab content
+  const renderGenerationTab = () => {
+    return (
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        {/* Left column - Chat interface */}
+        <div style={{ 
+          backgroundColor: mongoColors.white,
+          borderRadius: '0.375rem',
+          padding: '1rem',
+          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
+          display: 'flex',
+          flexDirection: 'column',
+          height: 'calc(100vh - 235px)'
+        }}>
+          <h2 style={{ 
+            fontSize: '1rem', 
+            fontWeight: '600', 
+            marginBottom: '0.75rem',
+            color: mongoColors.darkGreen
+          }}>
+            RAG Chatbot Demo
+          </h2>
+          
+          {/* Chat messages */}
+          <div style={{
+            flexGrow: 1,
+            overflowY: 'auto',
+            padding: '0.5rem',
+            backgroundColor: mongoColors.lightGreen,
+            borderRadius: '0.25rem',
+            marginBottom: '1rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.75rem'
+          }}>
+            {chatMessages.map((message, index) => (
+              <div
+                key={index}
+                style={{
+                  padding: '0.75rem',
+                  borderRadius: '0.375rem',
+                  maxWidth: '85%',
+                  alignSelf: message.role === 'user' ? 'flex-end' : 'flex-start',
+                  backgroundColor: message.role === 'user' ? mongoColors.green : mongoColors.white,
+                  color: message.role === 'user' ? mongoColors.darkGreen : mongoColors.textDark,
+                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
+                  fontSize: '0.875rem',
+                  whiteSpace: 'pre-wrap'
+                }}
+              >
+                {message.content}
+              </div>
+            ))}
+            
+            {isGenerating && (
+              <div style={{
+                padding: '0.75rem',
+                borderRadius: '0.375rem',
+                maxWidth: '85%',
+                alignSelf: 'flex-start',
+                backgroundColor: mongoColors.white,
+                color: mongoColors.textDark,
+                boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
+                fontSize: '0.875rem'
+              }}>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  color: mongoColors.blueGreen
+                }}>
+                  <div style={{ 
+                    width: '0.5rem',
+                    height: '0.5rem',
+                    borderRadius: '50%',
+                    backgroundColor: mongoColors.green,
+                    animation: 'pulse 1s infinite'
+                  }}></div>
+                  {generationStage === 1 ? 'Retrieving relevant chunks...' : 'Generating response...'}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Chat input */}
+          <div style={{
+            display: 'flex',
+            gap: '0.5rem'
+          }}>
+            <input
+              type="text"
+              value={userQuery}
+              onChange={(e) => setUserQuery(e.target.value)}
+              placeholder="Ask a question..."
+              onKeyDown={(e) => e.key === 'Enter' && simulateResponseGeneration()}
+              disabled={isGenerating}
+              style={{
+                flexGrow: 1,
+                padding: '0.75rem',
+                borderRadius: '0.25rem',
+                border: `1px solid ${mongoColors.mint}`,
+                fontSize: '0.875rem',
+                color: mongoColors.darkGreen
+              }}
+            />
+            <button
+              onClick={simulateResponseGeneration}
+              disabled={isGenerating || !userQuery.trim()}
+              style={{
+                padding: '0.75rem 1rem',
+                backgroundColor: isGenerating ? mongoColors.mint : mongoColors.green,
+                color: mongoColors.darkGreen,
+                border: 'none',
+                borderRadius: '0.25rem',
+                fontWeight: '600',
+                cursor: isGenerating ? 'not-allowed' : 'pointer'
+              }}
+            >
+              Send
+            </button>
+          </div>
+        </div>
+        
+        {/* Right column - RAG process visualization */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {/* RAG process steps */}
+          <div style={{ 
+            backgroundColor: mongoColors.white,
+            borderRadius: '0.375rem',
+            padding: '1rem',
+            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+          }}>
+            <h2 style={{ 
+              fontSize: '1rem', 
+              fontWeight: '600', 
+              marginBottom: '0.75rem',
+              color: mongoColors.darkGreen
+            }}>
+              RAG Process Visualization
+            </h2>
+            
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: '0.5rem' 
+            }}>
+              {/* Step 1: User Query */}
+              <div style={{
+                padding: '0.75rem',
+                borderRadius: '0.25rem',
+                backgroundColor: mongoColors.lightGreen,
+                border: isGenerating ? `2px solid ${mongoColors.green}` : `1px solid ${mongoColors.mint}`,
+                fontSize: '0.875rem',
+                color: mongoColors.darkGreen,
+                display: 'flex',
+                gap: '0.75rem',
+                alignItems: 'flex-start'
+              }}>
+                <div style={{
+                  width: '1.5rem',
+                  height: '1.5rem',
+                  borderRadius: '50%',
+                  backgroundColor: mongoColors.green,
+                  color: mongoColors.darkGreen,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: '600',
+                  flexShrink: 0
+                }}>
+                  1
+                </div>
+                <div>
+                  <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>User Query</div>
+                  <div>User submits a natural language question that gets converted to a vector embedding using the same model as the document chunks.</div>
+                </div>
+              </div>
+              
+              {/* Step 2: Vector Search */}
+              <div style={{
+                padding: '0.75rem',
+                borderRadius: '0.25rem',
+                backgroundColor: mongoColors.lightGreen,
+                border: isGenerating && generationStage === 1 ? `2px solid ${mongoColors.green}` : `1px solid ${mongoColors.mint}`,
+                fontSize: '0.875rem',
+                color: mongoColors.darkGreen,
+                display: 'flex',
+                gap: '0.75rem',
+                alignItems: 'flex-start'
+              }}>
+                <div style={{
+                  width: '1.5rem',
+                  height: '1.5rem',
+                  borderRadius: '50%',
+                  backgroundColor: mongoColors.green,
+                  color: mongoColors.darkGreen,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: '600',
+                  flexShrink: 0
+                }}>
+                  2
+                </div>
+                <div>
+                  <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>Vector Search Retrieval</div>
+                  <div>MongoDB Atlas performs a vector similarity search to find the most relevant document chunks based on semantic meaning, not just keywords.</div>
+                </div>
+              </div>
+              
+              {/* Step 3: Context Assembly */}
+              <div style={{
+                padding: '0.75rem',
+                borderRadius: '0.25rem',
+                backgroundColor: mongoColors.lightGreen,
+                border: isGenerating && generationStage === 2 ? `2px solid ${mongoColors.green}` : `1px solid ${mongoColors.mint}`,
+                fontSize: '0.875rem',
+                color: mongoColors.darkGreen,
+                display: 'flex',
+                gap: '0.75rem',
+                alignItems: 'flex-start'
+              }}>
+                <div style={{
+                  width: '1.5rem',
+                  height: '1.5rem',
+                  borderRadius: '50%',
+                  backgroundColor: mongoColors.green,
+                  color: mongoColors.darkGreen,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: '600',
+                  flexShrink: 0
+                }}>
+                  3
+                </div>
+                <div>
+                  <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>Context Assembly</div>
+                  <div>Retrieved chunks are assembled into a prompt context that provides the LLM with the information needed to answer accurately.</div>
+                </div>
+              </div>
+              
+              {/* Step 4: Response Generation */}
+              <div style={{
+                padding: '0.75rem',
+                borderRadius: '0.25rem',
+                backgroundColor: mongoColors.lightGreen,
+                border: `1px solid ${mongoColors.mint}`,
+                fontSize: '0.875rem',
+                color: mongoColors.darkGreen,
+                display: 'flex',
+                gap: '0.75rem',
+                alignItems: 'flex-start'
+              }}>
+                <div style={{
+                  width: '1.5rem',
+                  height: '1.5rem',
+                  borderRadius: '50%',
+                  backgroundColor: mongoColors.green,
+                  color: mongoColors.darkGreen,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: '600',
+                  flexShrink: 0
+                }}>
+                  4
+                </div>
+                <div>
+                  <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>Response Generation</div>
+                  <div>The LLM (e.g., GPT-4o) generates a response based on the retrieved context, answering the user's question with accurate, up-to-date information.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Chunking impact on RAG */}
+          <div style={{ 
+            backgroundColor: mongoColors.white,
+            borderRadius: '0.375rem',
+            padding: '1rem',
+            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+          }}>
+            <h2 style={{ 
+              fontSize: '1rem', 
+              fontWeight: '600', 
+              marginBottom: '0.75rem',
+              color: mongoColors.darkGreen
+            }}>
+              Chunking Impact on RAG Quality
+            </h2>
+            
+            <div style={{
+              padding: '0.75rem',
+              backgroundColor: mongoColors.mint,
+              borderRadius: '0.25rem',
+              fontSize: '0.875rem',
+              color: mongoColors.darkGreen,
+              marginBottom: '1rem'
+            }}>
+              <p><strong>Chunking directly affects RAG quality through:</strong></p>
+              <ul style={{ marginLeft: '1.25rem', marginTop: '0.5rem' }}>
+                <li>Relevance - Proper chunking ensures retrieved content is focused on the query topic</li>
+                <li>Context preservation - Too small chunks may lose important context</li>
+                <li>Token efficiency - Right-sized chunks maximize the information in the LLM context window</li>
+                <li>Hallucination reduction - Better chunks = more accurate information = fewer hallucinations</li>
+              </ul>
+            </div>
+            
+            <div style={{ 
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.5rem'
+            }}>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                fontSize: '0.75rem',
+                color: mongoColors.textMedium,
+                padding: '0 0.5rem'
+              }}>
+                <span>Poor Chunking</span>
+                <span>Optimal Chunking</span>
+              </div>
+              
+              {/* Relevance slider */}
+              <div>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  fontSize: '0.8rem',
+                  color: mongoColors.darkGreen,
+                  marginBottom: '0.25rem'
+                }}>
+                  <span style={{ fontWeight: '600' }}>Retrieval Relevance</span>
+                  <span style={{ color: mongoColors.blueGreen }}>+{Math.floor(75 + (method * 5))}%</span>
+                </div>
+                <div style={{
+                  height: '0.5rem',
+                  backgroundColor: mongoColors.lightGreen,
+                  borderRadius: '0.25rem',
+                  position: 'relative'
+                }}>
+                  <div style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    height: '100%',
+                    width: `${40 + (method * 12)}%`,
+                    backgroundColor: mongoColors.green,
+                    borderRadius: '0.25rem'
+                  }}></div>
+                </div>
+              </div>
+              
+              {/* Context preservation slider */}
+              <div>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  fontSize: '0.8rem',
+                  color: mongoColors.darkGreen,
+                  marginBottom: '0.25rem'
+                }}>
+                  <span style={{ fontWeight: '600' }}>Context Preservation</span>
+                  <span style={{ color: mongoColors.blueGreen }}>+{Math.floor(65 + (overlap * 1.5))}%</span>
+                </div>
+                <div style={{
+                  height: '0.5rem',
+                  backgroundColor: mongoColors.lightGreen,
+                  borderRadius: '0.25rem',
+                  position: 'relative'
+                }}>
+                  <div style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    height: '100%',
+                    width: `${30 + (overlap * 1.5)}%`,
+                    backgroundColor: mongoColors.green,
+                    borderRadius: '0.25rem'
+                  }}></div>
+                </div>
+              </div>
+              
+              {/* Hallucination reduction slider */}
+              <div>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  fontSize: '0.8rem',
+                  color: mongoColors.darkGreen,
+                  marginBottom: '0.25rem'
+                }}>
+                  <span style={{ fontWeight: '600' }}>Hallucination Reduction</span>
+                  <span style={{ color: mongoColors.blueGreen }}>+{Math.floor(60 + (method * 8))}%</span>
+                </div>
+                <div style={{
+                  height: '0.5rem',
+                  backgroundColor: mongoColors.lightGreen,
+                  borderRadius: '0.25rem',
+                  position: 'relative'
+                }}>
+                  <div style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    height: '100%',
+                    width: `${25 + (method * 15)}%`,
+                    backgroundColor: mongoColors.green,
+                    borderRadius: '0.25rem'
+                  }}></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Most recently retrieved chunks */}
+          {retrievedChunks.length > 0 && (
+            <div style={{ 
+              backgroundColor: mongoColors.white,
+              borderRadius: '0.375rem',
+              padding: '1rem',
+              boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+            }}>
+              <h2 style={{ 
+                fontSize: '1rem', 
+                fontWeight: '600', 
+                marginBottom: '0.75rem',
+                color: mongoColors.darkGreen
+              }}>
+                Most Recently Retrieved
+              </h2>
+              
+              <div style={{
+                padding: '0.75rem',
+                backgroundColor: retrievedChunks[0].color,
+                borderRadius: '0.25rem',
+                color: mongoColors.darkGreen,
+                fontSize: '0.875rem',
+                wordBreak: 'break-word',
+                whiteSpace: 'pre-wrap',
+                overflowWrap: 'break-word'
+              }}>
+                <div style={{ marginBottom: '0.5rem', fontWeight: '600' }}>
+                  Top Match (Similarity: {(retrievedChunks[0].similarity * 100).toFixed(1)}%)
+                </div>
+                {retrievedChunks[0].text.length > 150 
+                  ? retrievedChunks[0].text.substring(0, 147) + '...' 
+                  : retrievedChunks[0].text}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+  
   return (
-    <div className="flex flex-col w-full" style={{ backgroundColor: mongoColors.darkGreen, color: mongoColors.textLight }}>
+    <div style={{ 
+      backgroundColor: mongoColors.darkGreen,
+      minHeight: '100vh',
+      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+    }}>
+      {/* Header */}
       <div style={{ 
         backgroundColor: mongoColors.darkGreen, 
-        padding: '1.5rem', 
-        marginBottom: '1rem', 
+        padding: '1rem', 
+        color: mongoColors.textLight,
         borderBottom: `1px solid ${mongoColors.blueGreen}`,
-        color: mongoColors.textLight
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
       }}>
         <div>
-          <h1 className="text-2xl font-bold mb-4" style={{ color: mongoColors.textLight }}>MongoDB BSON Document Structure</h1>
-          <p className="mb-2">BSON stores each field with its <strong>type</strong>, <strong>name</strong>, <strong>length</strong>, and <strong>value</strong>.</p>
-          <p className="mb-2">When MongoDB looks for fields, it starts at the beginning and traverses sequentially.</p>
-          <p>The <strong>length</strong> field allows MongoDB to <strong>skip entire nested structures</strong> when not needed!</p>
+          <h1 style={{ 
+            fontSize: '1.5rem', 
+            fontWeight: 'bold', 
+            marginBottom: '0.25rem',
+            color: mongoColors.green 
+          }}>
+            RAG Chunking Lifecycle
+          </h1>
+          <p style={{ 
+            fontSize: '0.875rem',
+            color: mongoColors.textLight
+          }}>
+            Visualize how different chunking strategies affect the full RAG pipeline
+          </p>
         </div>
-        <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-          <Button
-            variant="contained"
-            startIcon={<SchoolIcon />}
-            onClick={startWalkthrough}
-            style={{ 
-              backgroundColor: mongoColors.green,
-              color: mongoColors.darkGreen,
-              fontWeight: 600
-            }}
-          >
-            Start Tutorial
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<MenuBookIcon />}
-            onClick={() => setOpenReadmeModal(true)}
-            style={{ 
-              borderColor: mongoColors.green,
-              color: mongoColors.green,
-              fontWeight: 600
-            }}
-          >
-            View Documentation
-          </Button>
+        
+        {/* Stage tabs */}
+        <div style={{ 
+          display: 'flex',
+          gap: '0.5rem'
+        }}>
+          {['Chunking', 'Embedding', 'Retrieval', 'Generation'].map((tab, index) => (
+            <button
+              key={index}
+              onClick={() => setActiveTab(tab.toLowerCase())}
+              style={{
+                padding: '0.5rem 0.75rem',
+                backgroundColor: activeTab === tab.toLowerCase() ? mongoColors.green : 'transparent',
+                color: activeTab === tab.toLowerCase() ? mongoColors.darkGreen : mongoColors.textLight,
+                border: activeTab === tab.toLowerCase() ? 'none' : `1px solid ${mongoColors.blueGreen}`,
+                borderRadius: '0.25rem',
+                fontWeight: activeTab === tab.toLowerCase() ? '600' : '400',
+                cursor: 'pointer'
+              }}
+            >
+              {index + 1}. {tab}
+            </button>
+          ))}
         </div>
       </div>
       
-      <div className="flex flex-col md:flex-row gap-4 px-4">
-        <div className="w-full md:w-2/5">
-          <Tooltip
-            open={walkthrough.active && walkthrough.step === 0}
-            placement={window.innerWidth < 768 ? 'bottom' : 'right'}
-            arrow
-            PopperProps={{
-              disablePortal: true,
-              sx: {
-                "& .MuiTooltip-tooltip": {
-                  backgroundColor: "transparent",
-                  padding: 0,
-                  maxWidth: window.innerWidth < 768 ? '90vw' : '300px'
-                },
-                "& .MuiTooltip-arrow": {
-                  color: mongoColors.white
-                }
-              }
-            }}
-            title={<WalkthroughTooltip step={0} />}
-          >
-            <div id="json-document" style={{ 
-              backgroundColor: mongoColors.darkGreen, 
-              border: `1px solid ${mongoColors.blueGreen}`,
-              color: mongoColors.green, 
-              padding: '1rem', 
-              borderRadius: '0.375rem', 
-              marginBottom: '1rem', 
-              maxHeight: window.innerWidth < 768 ? '16rem' : '24rem', 
-              overflow: 'auto' 
-            }}>
-              <div className="mb-2" style={{ color: mongoColors.textMedium }}>// MongoDB JSON Document</div>
-              <pre className="text-xs" style={{ color: mongoColors.mint }}>
-{`{
-  _id: ${document._id},
-  color: "${document.color}",
-  size: "${document.size}",
-  shape: "${document.shape}",
-  metadata: {
-    created: "${document.metadata.created}",
-    updated: "${document.metadata.updated}",
-    tags: ${JSON.stringify(document.metadata.tags)},
-    department: {
-      name: "${document.metadata.department.name}",
-      floor: ${document.metadata.department.floor},
-      manager: {
-        id: ${document.metadata.department.manager.id},
-        name: "${document.metadata.department.manager.name}",
-        contact: {
-          email: "${document.metadata.department.manager.contact.email}",
-          phone: "${document.metadata.department.manager.contact.phone}"
-        }
-      }
-    }
-  },
-  inventory: {
-    quantity: ${document.inventory.quantity},
-    location: {
-      warehouse: "${document.inventory.location.warehouse}",
-      aisle: "${document.inventory.location.aisle}",
-      shelf: ${document.inventory.location.shelf},
-      bin: ${document.inventory.location.bin}
-    },
-    pricing: {
-      regular: ${document.inventory.pricing.regular},
-      sale: ${document.inventory.pricing.sale},
-      discount: {
-        percent: ${document.inventory.pricing.discount.percent},
-        validUntil: "${document.inventory.pricing.discount.validUntil}"
-      }
-    }
-  },
-  props: { edge: ${document.props.edge}, face: ${document.props.face} },
-  coords: [${document.coords.join(', ')}]
-}`}
-              </pre>
-            </div>
-          </Tooltip>
-          
-          <Tooltip
-            open={walkthrough.active && walkthrough.step === 1}
-            placement={window.innerWidth < 768 ? 'bottom' : 'right'}
-            arrow
-            PopperProps={{
-              disablePortal: true,
-              sx: {
-                "& .MuiTooltip-tooltip": {
-                  backgroundColor: "transparent",
-                  padding: 0,
-                  maxWidth: window.innerWidth < 768 ? '90vw' : '300px'
-                },
-                "& .MuiTooltip-arrow": {
-                  color: mongoColors.white
-                }
-              }
-            }}
-            title={<WalkthroughTooltip step={1} />}
-          >
-            <div id="search-buttons" style={{ 
-              backgroundColor: mongoColors.white, 
-              padding: window.innerWidth < 768 ? '1rem' : '1.5rem', 
-              borderRadius: '0.375rem', 
-              marginBottom: '1rem',
-              boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
-            }}>
-              <h2 className="text-lg font-semibold mb-3" style={{ color: mongoColors.darkGreen }}>Select a Field to Search</h2>
-              <p className="text-sm mb-4" style={{ color: mongoColors.textMedium }}>Watch how MongoDB traverses the BSON structure</p>
-              
-              <div className={`grid ${window.innerWidth < 768 ? 'grid-cols-1' : 'grid-cols-2'} gap-2 mb-4`}>
-                {Object.keys(searchPaths).map(field => (
-                  <button 
-                    key={field}
-                    onClick={() => startFieldSearch(field)} 
-                    style={{ 
-                      padding: '0.5rem 0.75rem',
-                      fontSize: '0.875rem',
-                      borderRadius: '0.25rem',
-                      backgroundColor: searchField === field ? mongoColors.green : mongoColors.mint,
-                      color: searchField === field ? mongoColors.darkGreen : mongoColors.blueGreen,
-                      fontWeight: 500,
-                      transition: 'all 0.2s ease-in-out',
-                      width: '100%',
-                      textAlign: 'left',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis'
-                    }}
-                  >
-                    {field}
-                  </button>
-                ))}
-              </div>
-
-              <Tooltip
-                open={walkthrough.active && walkthrough.step === 2}
-                placement={window.innerWidth < 768 ? 'bottom' : 'top'}
-                arrow
-                PopperProps={{
-                  disablePortal: true,
-                  sx: {
-                    "& .MuiTooltip-tooltip": {
-                      backgroundColor: "transparent",
-                      padding: 0,
-                      maxWidth: window.innerWidth < 768 ? '90vw' : '300px'
-                    },
-                    "& .MuiTooltip-arrow": {
-                      color: mongoColors.white
-                    }
-                  }
-                }}
-                title={<WalkthroughTooltip step={2} />}
-              >
-                <div id="next-step-button" className="flex justify-center">
-                  <button
-                    onClick={nextStep}
-                    style={{ 
-                      padding: '0.75rem 1.5rem', 
-                      backgroundColor: mongoColors.green,
-                      color: mongoColors.darkGreen,
-                      fontWeight: 600,
-                      borderRadius: '0.25rem',
-                      transition: 'all 0.2s ease-in-out',
-                      width: window.innerWidth < 768 ? '100%' : 'auto'
-                    }}
-                  >
-                    Next Step →
-                  </button>
-                </div>
-              </Tooltip>
-            </div>
-          </Tooltip>
+      {/* Main content */}
+      <div style={{ padding: '1rem' }}>
+        {/* Tab navigation */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          color: mongoColors.textLight,
+          marginBottom: '1rem',
+          fontSize: '0.875rem'
+        }}>
+          <span>RAG Lifecycle:</span>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.25rem'
+          }}>
+            {['Chunking', 'Embedding', 'Retrieval', 'Generation'].map((stage, index) => (
+              <React.Fragment key={index}>
+                {index > 0 && (
+                  <span style={{ color: mongoColors.textMedium, margin: '0 0.25rem' }}>
+                    →
+                  </span>
+                )}
+                <button
+                  onClick={() => setActiveTab(stage.toLowerCase())}
+                  style={{
+                    padding: '0.25rem 0.5rem',
+                    backgroundColor: activeTab === stage.toLowerCase() ? mongoColors.blueGreen : 'transparent',
+                    color: activeTab === stage.toLowerCase() ? mongoColors.white : mongoColors.textLight,
+                    border: 'none',
+                    borderRadius: '0.25rem',
+                    fontSize: '0.875rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {stage}
+                </button>
+              </React.Fragment>
+            ))}
+          </div>
         </div>
         
-        <div className="w-full md:w-3/5">
-          <div style={{ 
-            backgroundColor: mongoColors.white, 
-            border: `1px solid ${mongoColors.mint}`,
-            borderRadius: '0.375rem', 
-            padding: window.innerWidth < 768 ? '0.75rem' : '1rem', 
-            marginBottom: '1rem' 
-          }}>
-            <div className="flex justify-between items-center mb-3">
-              <div className="font-semibold" style={{ color: mongoColors.darkGreen }}>
-                Searching for: <span style={{ color: mongoColors.blueGreen }}>{searchField}</span>
-              </div>
-              <div className="text-sm" style={{ color: mongoColors.textMedium }}>
-                {searchStep > 0 ? `Step ${Math.round(searchStep)}` : 'Ready'}
-              </div>
-            </div>
-            <div style={{ 
-              padding: '0.75rem', 
-              backgroundColor: mongoColors.mint, 
-              borderRadius: '0.25rem', 
-              fontSize: '0.875rem',
-              color: mongoColors.darkGreen,
-              minHeight: '2.5rem' 
-            }}>
-              {getStepMessage()}
-            </div>
-          </div>
-
-          {showSizeStats && (
-            <Tooltip
-              open={walkthrough.active && walkthrough.step === 3}
-              placement={window.innerWidth < 768 ? 'bottom' : 'left'}
-              arrow
-              PopperProps={{
-                disablePortal: true,
-                sx: {
-                  "& .MuiTooltip-tooltip": {
-                    backgroundColor: "transparent",
-                    padding: 0,
-                    maxWidth: window.innerWidth < 768 ? '90vw' : '300px'
-                  },
-                  "& .MuiTooltip-arrow": {
-                    color: mongoColors.white
-                  }
-                }
-              }}
-              title={<WalkthroughTooltip step={3} />}
-            >
-              <div id="performance-analysis" style={{ 
-                backgroundColor: mongoColors.white,
-                border: `1px solid ${mongoColors.mint}`,
-                padding: '1.5rem', 
-                borderRadius: '0.375rem', 
-                marginBottom: '1rem' 
-              }}>
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-semibold" style={{ color: mongoColors.darkGreen }}>Performance Analysis</h3>
-                  <IconButton
-                    size="small"
-                    onClick={() => setOpenHelpModal(true)}
-                    style={{ color: mongoColors.blueGreen }}
-                  >
-                    <HelpOutlineIcon />
-                  </IconButton>
-                </div>
-                <div className="text-sm space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span style={{ color: mongoColors.textMedium }}>Bytes examined:</span>
-                    <span style={{ fontFamily: 'monospace', color: mongoColors.darkGreen }}>{getByteStats().examined} bytes</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span style={{ color: mongoColors.textMedium }}>Bytes skipped:</span>
-                    <span style={{ fontFamily: 'monospace', color: mongoColors.green, fontWeight: 'bold' }}>{getByteStats().skipped} bytes</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span style={{ color: mongoColors.textMedium }}>Total document size:</span>
-                    <span style={{ fontFamily: 'monospace', color: mongoColors.darkGreen }}>{getByteStats().total} bytes</span>
-                  </div>
-                  <div style={{ 
-                    marginTop: '1rem', 
-                    backgroundColor: mongoColors.mint, 
-                    height: '0.75rem', 
-                    borderRadius: '9999px', 
-                    overflow: 'hidden' 
-                  }}>
-                    <div 
-                      style={{ 
-                        backgroundColor: mongoColors.green, 
-                        height: '100%',
-                        width: `${getByteStats().percentSkipped}%`,
-                        transition: 'width 0.3s ease-in-out'
-                      }}
-                    ></div>
-                  </div>
-                  <div className="text-center text-sm font-medium" style={{ color: mongoColors.blueGreen }}>
-                    {getByteStats().percentSkipped}% of document skipped!
-                  </div>
-                </div>
-              </div>
-            </Tooltip>
-          )}
-          
-          <Tooltip
-            open={walkthrough.active && walkthrough.step === 4}
-            placement={window.innerWidth < 768 ? 'bottom' : 'left'}
-            arrow
-            PopperProps={{
-              disablePortal: true,
-              sx: {
-                "& .MuiTooltip-tooltip": {
-                  backgroundColor: "transparent",
-                  padding: 0,
-                  maxWidth: window.innerWidth < 768 ? '90vw' : '300px'
-                },
-                "& .MuiTooltip-arrow": {
-                  color: mongoColors.white
-                }
-              }
-            }}
-            title={<WalkthroughTooltip step={4} />}
-          >
-            <div id="bson-table" style={{ 
-              backgroundColor: mongoColors.white,
-              border: `1px solid ${mongoColors.mint}`,
-              borderRadius: '0.375rem',
-              overflow: 'hidden'
-            }}>
-              <table className="min-w-full">
-                <thead>
-                  <tr style={{ backgroundColor: mongoColors.darkGreen, color: mongoColors.textLight, fontSize: '0.875rem' }}>
-                    <th className="py-3 px-4 text-left font-semibold">Type</th>
-                    <th className="py-3 px-4 text-left font-semibold">Name</th>
-                    <th className="py-3 px-4 text-left font-semibold" style={{ backgroundColor: mongoColors.blueGreen }}>Length</th>
-                    <th className="py-3 px-4 text-left font-semibold">Value</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {bsonFields.map((field, index) => {
-                    const isActive = index === Math.floor(searchStep);
-                    const isHighlighted = index === Math.floor(searchStep) || 
-                      (searchField.includes('.') && 
-                       field.name === searchField.split('.')[0] && 
-                       index < searchStep);
-                    
-                    const willBeSkipped = field.nested && 
-                                         searchStep > index && 
-                                         !searchField.startsWith(field.name);
-                    
-                    return (
-                      <tr key={index} style={{ 
-                        borderBottom: `1px solid ${mongoColors.mint}`,
-                        fontSize: '0.875rem',
-                        backgroundColor: isActive ? mongoColors.mint : isHighlighted ? mongoColors.lightGreen : mongoColors.white,
-                        textDecoration: willBeSkipped ? 'line-through' : 'none',
-                        opacity: willBeSkipped ? 0.5 : 1
-                      }}>
-                        <td className="py-2 px-4" style={{ color: mongoColors.textDark }}>{field.type}</td>
-                        <td className="py-2 px-4 font-medium" style={{ color: mongoColors.blueGreen }}>
-                          {field.name}
-                          {field.name === searchField.split('.')[0] && searchField.includes('.') && isHighlighted && (
-                            <span style={{ 
-                              marginLeft: '0.5rem', 
-                              fontSize: '0.75rem', 
-                              backgroundColor: mongoColors.green, 
-                              color: mongoColors.darkGreen, 
-                              padding: '0.125rem 0.375rem', 
-                              borderRadius: '0.25rem',
-                              fontWeight: 600
-                            }}>
-                              looking inside
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-2 px-4" style={{ 
-                          backgroundColor: field.nested ? mongoColors.mint : 'transparent', 
-                          fontWeight: field.nested ? 'bold' : 'normal',
-                          color: field.nested ? mongoColors.blueGreen : mongoColors.textDark
-                        }}>
-                          {field.length}
-                        </td>
-                        <td className="py-2 px-4 max-w-xs truncate" style={{ color: mongoColors.textDark }}>
-                          {field.value}
-                          {willBeSkipped && (
-                            <span style={{ 
-                              marginLeft: '0.5rem', 
-                              fontSize: '0.75rem', 
-                              backgroundColor: mongoColors.green, 
-                              color: mongoColors.darkGreen, 
-                              padding: '0.125rem 0.375rem', 
-                              borderRadius: '0.25rem',
-                              fontWeight: 600
-                            }}>
-                              skipped!
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </Tooltip>
-        </div>
+        {/* Tab content */}
+        {renderTabContent()}
       </div>
-
-      <Modal
-        open={openHelpModal}
-        onClose={() => setOpenHelpModal(false)}
-        aria-labelledby="why-this-matters-modal"
-      >
-        <div style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          backgroundColor: mongoColors.white,
-          padding: '2rem',
-          borderRadius: '0.5rem',
-          maxWidth: '600px',
-          width: '90%',
-          outline: 'none',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
-        }}>
-          <h3 className="font-semibold mb-4" style={{ color: mongoColors.darkGreen }}>Why This Matters</h3>
-          <div className="text-sm space-y-3" style={{ color: mongoColors.textDark }}>
-            <p><strong>In traditional databases</strong>, deeply nested data often causes performance problems.</p>
-            <p><strong>In MongoDB</strong>, the opposite is true - nested documents can improve performance!</p>
-            <p>This is because:</p>
-            <ol className="list-decimal pl-5 space-y-2">
-              <li>The <strong>length</strong> field in BSON lets MongoDB <strong>skip entire nested structures</strong></li>
-              <li>When searching for fields, MongoDB can jump past large nested documents not relevant to the query</li>
-              <li>The more complex and deeply nested your documents, the <strong>more bytes can be skipped</strong></li>
-              <li>This makes operations on specific fields in large documents extremely efficient</li>
-            </ol>
-          </div>
-        </div>
-      </Modal>
-
-      <Modal
-        open={openReadmeModal}
-        onClose={() => setOpenReadmeModal(false)}
-        aria-labelledby="readme-modal"
-      >
-        <div style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          backgroundColor: mongoColors.white,
-          padding: '2rem',
-          borderRadius: '0.5rem',
-          maxWidth: '800px',
-          width: '90%',
-          maxHeight: '80vh',
-          overflow: 'auto',
-          outline: 'none',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
-        }}>
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center', 
-            marginBottom: '1.5rem',
-            position: 'sticky',
-            top: 0,
-            backgroundColor: mongoColors.white,
-            padding: '0.5rem 0',
-            borderBottom: `1px solid ${mongoColors.mint}`
-          }}>
-            <h2 style={{ 
-              color: mongoColors.darkGreen,
-              margin: 0,
-              fontSize: '1.5rem',
-              fontWeight: 600
-            }}>
-              Documentation
-            </h2>
-            <IconButton
-              onClick={() => setOpenReadmeModal(false)}
-              style={{ color: mongoColors.blueGreen }}
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M6 18L18 6M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </IconButton>
-          </div>
-          <div style={{ 
-            color: mongoColors.textDark,
-            padding: '1rem'
-          }}>
-            <div className="markdown-body" style={{
-              '& > *:first-child': {
-                marginTop: 0
-              },
-              '& h1': {
-                fontSize: '2.5rem',
-                fontWeight: 700,
-                marginBottom: '1.5rem',
-                color: mongoColors.darkGreen,
-                borderBottom: `2px solid ${mongoColors.mint}`,
-                paddingBottom: '0.5rem'
-              },
-              '& h2': {
-                fontSize: '2rem',
-                fontWeight: 600,
-                marginTop: '2.5rem',
-                marginBottom: '1rem',
-                color: mongoColors.darkGreen,
-                borderBottom: `1px solid ${mongoColors.mint}`,
-                paddingBottom: '0.5rem'
-              },
-              '& h3': {
-                fontSize: '1.5rem',
-                fontWeight: 600,
-                marginTop: '2rem',
-                marginBottom: '1rem',
-                color: mongoColors.darkGreen
-              },
-              '& p': {
-                marginBottom: '1.5rem',
-                lineHeight: '1.7',
-                fontSize: '1.1rem'
-              },
-              '& ul, & ol': {
-                marginBottom: '1.5rem',
-                paddingLeft: '2rem'
-              },
-              '& ul': {
-                listStyleType: 'disc'
-              },
-              '& ol': {
-                listStyleType: 'decimal'
-              },
-              '& li': {
-                marginBottom: '0.75rem',
-                fontSize: '1.1rem',
-                lineHeight: '1.7'
-              },
-              '& li > p': {
-                marginBottom: '0.75rem'
-              },
-              '& code': {
-                backgroundColor: mongoColors.mint,
-                padding: '0.2rem 0.4rem',
-                borderRadius: '0.25rem',
-                fontSize: '0.9em',
-                fontFamily: '"Monaco", "Menlo", "Ubuntu Mono", "Consolas", "source-code-pro", monospace'
-              },
-              '& pre': {
-                backgroundColor: mongoColors.mint,
-                padding: '1rem',
-                borderRadius: '0.5rem',
-                overflow: 'auto',
-                marginBottom: '1.5rem'
-              },
-              '& pre code': {
-                backgroundColor: 'transparent',
-                padding: 0,
-                fontSize: '0.9rem',
-                lineHeight: '1.5'
-              },
-              '& strong': {
-                fontWeight: 600,
-                color: mongoColors.blueGreen
-              },
-              '& em': {
-                fontStyle: 'italic'
-              },
-              '& blockquote': {
-                borderLeft: `4px solid ${mongoColors.mint}`,
-                paddingLeft: '1rem',
-                marginLeft: 0,
-                marginRight: 0,
-                marginBottom: '1.5rem',
-                color: mongoColors.textMedium,
-                fontSize: '1.1rem',
-                fontStyle: 'italic'
-              },
-              '& hr': {
-                border: 'none',
-                borderTop: `1px solid ${mongoColors.mint}`,
-                margin: '2rem 0'
-              },
-              '& table': {
-                width: '100%',
-                marginBottom: '1.5rem',
-                borderCollapse: 'collapse'
-              },
-              '& th, & td': {
-                padding: '0.75rem',
-                borderBottom: `1px solid ${mongoColors.mint}`,
-                textAlign: 'left'
-              },
-              '& th': {
-                fontWeight: 600,
-                backgroundColor: mongoColors.mint,
-                color: mongoColors.darkGreen
-              }
-            }}>
-              <ReactMarkdown children={readmeContent} />
-            </div>
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 };
 
-export default MongoDBBSONDemo;
+export default RAGLifecycleDemo;
